@@ -4,6 +4,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from . import resnet50
+
 import tensorflow as tf
 
 _KERAS_BACKEND = None
@@ -55,5 +57,3 @@ def correct_pad(backend, inputs, kernel_size):
 
 
 __version__ = '1.0.8'
-
-from . import resnet50
