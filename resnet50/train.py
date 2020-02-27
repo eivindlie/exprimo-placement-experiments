@@ -64,7 +64,7 @@ for image_batch, label_batch in train_batches:
     model.train_on_batch(image_batch, label_batch)
     end_time = time.clock()
 
-    elapsed_time = end_time - start_time
+    elapsed_time = (end_time - start_time) * 1000
     print(f'\t{elapsed_time}ms')
     batch_times.append(elapsed_time)
 
