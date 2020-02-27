@@ -3,8 +3,6 @@ import time
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-import matplotlib.pyplot as plt
-
 from resnet50 import ResNet50
 
 tfds.disable_progress_bar()
