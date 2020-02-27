@@ -48,7 +48,13 @@ def get_device_context(layer, device_assignment):
         return void_context()
 
     else:
-        return tf.device(device_assignment[layer])
+        device_map = {
+            0: '/CPU:0',
+            1: '/CPU:1',
+            2: '/GPU:0',
+            3: '/GPU:1'
+        }
+        return tf.device(device_map[device_assignment[layer]])
 
 
 def identity_block(input_tensor, kernel_size, filters, stage, block, device_assignment=None):
