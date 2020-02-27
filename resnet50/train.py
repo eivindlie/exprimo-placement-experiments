@@ -1,3 +1,4 @@
+import json
 import time
 
 import tensorflow as tf
@@ -6,6 +7,9 @@ import tensorflow_datasets as tfds
 from resnet50 import ResNet50
 
 tfds.disable_progress_bar()
+
+
+DEVICE_ASSIGNMENT_PATH = 'resnet50-assignment.json'
 
 
 datasets, metadata = tfds.load(
@@ -27,6 +31,10 @@ get_label_name = metadata.features['label'].int2str
 IMG_SIZE = 224
 
 
+with open(DEVICE_ASSIGNMENT_PATH) as f:
+    device_assignment = json.load(f)
+
+
 def format_example(image, label):
     image = tf.cast(image, tf.float32)
     image = (image / 127.5) - 1
@@ -45,7 +53,8 @@ validation_batches = validation.batch(BATCH_SIZE)
 
 IMG_SHAPE = (IMG_SIZE, IMG_SIZE, 3)
 
-base_model = ResNet50(input_shape=IMG_SHAPE, include_top=True, weights=None, classes=1000)
+base_model = ResNet50(input_shape=IMG_SHAPE, include_top=True, weights=None, classes=1000,
+                      device_assignment=device_assignment)
 
 model = base_model
 
