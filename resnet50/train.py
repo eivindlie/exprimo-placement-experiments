@@ -1,3 +1,5 @@
+import time
+
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
@@ -43,9 +45,6 @@ SHUFFLE_BUFFER_SIZE = 1000
 train_batches = train.shuffle(SHUFFLE_BUFFER_SIZE).batch(BATCH_SIZE)
 validation_batches = validation.batch(BATCH_SIZE)
 
-for image_batch, label_batch in train_batches.take(1):
-    pass
-
 IMG_SHAPE = (IMG_SIZE, IMG_SIZE, 3)
 
 base_model = ResNet50(input_shape=IMG_SHAPE, include_top=True, weights=None, classes=1000)
@@ -57,4 +56,21 @@ model.compile(
     loss=tf.keras.losses.CategoricalCrossentropy(),
 )
 
-history = model.fit(train_batches, epochs=1, validation_data=validation_batches)
+batch_times = []
+
+i = 0
+for image_batch, label_batch in train_batches.take(11):
+    start_time = time.clock()
+    model.train_on_batch(image_batch, label_batch)
+    end_time = time.clock()
+
+    elapsed_time = end_time - start_time
+    batch_times.append(elapsed_time)
+
+    i += 1
+    if i > 11:
+        break
+
+print(f'Batch times: {batch_times}')
+
+#history = model.fit(train_batches, epochs=1, validation_data=validation_batches)
