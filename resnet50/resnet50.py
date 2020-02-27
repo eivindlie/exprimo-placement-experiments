@@ -269,40 +269,40 @@ def ResNet50(include_top=True,
         x = layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
 
     # res2a
-    x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
+    x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1), device_assignment=device_assignment)
     # res2b
-    x = identity_block(x, 3, [64, 64, 256], stage=2, block='b')
+    x = identity_block(x, 3, [64, 64, 256], stage=2, block='b', device_assignment=device_assignment)
     # res2c
-    x = identity_block(x, 3, [64, 64, 256], stage=2, block='c')
+    x = identity_block(x, 3, [64, 64, 256], stage=2, block='c', device_assignment=device_assignment)
 
     # res3a
-    x = conv_block(x, 3, [128, 128, 512], stage=3, block='a')
+    x = conv_block(x, 3, [128, 128, 512], stage=3, block='a', device_assignment=device_assignment)
     # res3b
-    x = identity_block(x, 3, [128, 128, 512], stage=3, block='b')
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='b', device_assignment=device_assignment)
     # res3c
-    x = identity_block(x, 3, [128, 128, 512], stage=3, block='c')
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='c', device_assignment=device_assignment)
     # res3d
-    x = identity_block(x, 3, [128, 128, 512], stage=3, block='d')
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='d', device_assignment=device_assignment)
 
     # res4a
-    x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
+    x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a', device_assignment=device_assignment)
     # res4b
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b', device_assignment=device_assignment)
     # res4c
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='c')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='c', device_assignment=device_assignment)
     # res4d
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='d')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='d', device_assignment=device_assignment)
     # res4e
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='e')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='e', device_assignment=device_assignment)
     # res4f
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='f')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='f', device_assignment=device_assignment)
 
     # res5a
-    x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
+    x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a', device_assignment=device_assignment)
     # res5b
-    x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
+    x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b', device_assignment=device_assignment)
     # res5c
-    x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
+    x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c', device_assignment=device_assignment)
 
     if include_top:
         with get_device_context('pool5', device_assignment):
