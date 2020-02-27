@@ -209,6 +209,7 @@ def ResNet50(include_top=True,
                                       require_flatten=include_top,
                                       weights=weights)
 
+    # data
     if input_tensor is None:
         img_input = layers.Input(shape=input_shape)
     else:
@@ -221,6 +222,7 @@ def ResNet50(include_top=True,
     else:
         bn_axis = 1
 
+    # conv1
     x = layers.ZeroPadding2D(padding=(3, 3), name='conv1_pad')(img_input)
     x = layers.Conv2D(64, (7, 7),
                       strides=(2, 2),
@@ -229,31 +231,50 @@ def ResNet50(include_top=True,
                       name='conv1')(x)
     x = layers.BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
     x = layers.Activation('relu')(x)
+    # pool1
     x = layers.ZeroPadding2D(padding=(1, 1), name='pool1_pad')(x)
     x = layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
 
+    # res2a
     x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
+    # res2b
     x = identity_block(x, 3, [64, 64, 256], stage=2, block='b')
+    # res2c
     x = identity_block(x, 3, [64, 64, 256], stage=2, block='c')
 
+    # res3a
     x = conv_block(x, 3, [128, 128, 512], stage=3, block='a')
+    # res3b
     x = identity_block(x, 3, [128, 128, 512], stage=3, block='b')
+    # res3c
     x = identity_block(x, 3, [128, 128, 512], stage=3, block='c')
+    # res3d
     x = identity_block(x, 3, [128, 128, 512], stage=3, block='d')
 
+    # res4a
     x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
+    # res4b
     x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b')
+    # res4c
     x = identity_block(x, 3, [256, 256, 1024], stage=4, block='c')
+    # res4d
     x = identity_block(x, 3, [256, 256, 1024], stage=4, block='d')
+    # res4e
     x = identity_block(x, 3, [256, 256, 1024], stage=4, block='e')
+    # res4f
     x = identity_block(x, 3, [256, 256, 1024], stage=4, block='f')
 
+    # res5a
     x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
+    # res5b
     x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
+    # res5c
     x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
 
     if include_top:
+        # pool5
         x = layers.GlobalAveragePooling2D(name='avg_pool')(x)
+        # fc1000 + prob
         x = layers.Dense(classes, activation='softmax', name='fc1000')(x)
     else:
         if pooling == 'avg':
