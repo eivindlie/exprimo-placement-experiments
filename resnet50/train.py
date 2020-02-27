@@ -56,7 +56,7 @@ model.compile(
 
 batch_times = []
 
-NUM_BATCHES = 11
+NUM_BATCHES = 50 + 1
 
 print('Starting training')
 i = 0
