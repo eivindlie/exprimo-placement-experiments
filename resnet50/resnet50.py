@@ -14,6 +14,8 @@ from __future__ import print_function
 import os
 import warnings
 
+import tensorflow as tf
+
 from utils import get_submodules_from_kwargs
 import imagenet_utils
 from imagenet_utils import _obtain_input_shape
@@ -33,7 +35,23 @@ models = None
 keras_utils = None
 
 
-def identity_block(input_tensor, kernel_size, filters, stage, block):
+class void_context:
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+
+def get_device_context(layer, device_assignment):
+    if not device_assignment or layer not in device_assignment:
+        return void_context()
+
+    else:
+        return tf.device(device_assignment[layer])
+
+
+def identity_block(input_tensor, kernel_size, filters, stage, block, device_assignment=None):
     """The identity block is the block that has no conv layer at shortcut.
 
     # Arguments
@@ -55,26 +73,31 @@ def identity_block(input_tensor, kernel_size, filters, stage, block):
     conv_name_base = 'res' + str(stage) + block + '_branch'
     bn_name_base = 'bn' + str(stage) + block + '_branch'
 
-    x = layers.Conv2D(filters1, (1, 1),
-                      kernel_initializer='he_normal',
-                      name=conv_name_base + '2a')(input_tensor)
-    x = layers.BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
-    x = layers.Activation('relu')(x)
+    with get_device_context(conv_name_base + '2a', device_assignment):
+        x = layers.Conv2D(filters1, (1, 1),
+                          kernel_initializer='he_normal',
+                          name=conv_name_base + '2a')(input_tensor)
+        x = layers.BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
+        x = layers.Activation('relu')(x)
 
-    x = layers.Conv2D(filters2, kernel_size,
-                      padding='same',
-                      kernel_initializer='he_normal',
-                      name=conv_name_base + '2b')(x)
-    x = layers.BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
-    x = layers.Activation('relu')(x)
+    with get_device_context(conv_name_base + '2b', device_assignment):
+        x = layers.Conv2D(filters2, kernel_size,
+                          padding='same',
+                          kernel_initializer='he_normal',
+                          name=conv_name_base + '2b')(x)
+        x = layers.BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
+        x = layers.Activation('relu')(x)
 
-    x = layers.Conv2D(filters3, (1, 1),
-                      kernel_initializer='he_normal',
-                      name=conv_name_base + '2c')(x)
-    x = layers.BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
+    with get_device_context(conv_name_base + '2c', device_assignment):
+        x = layers.Conv2D(filters3, (1, 1),
+                          kernel_initializer='he_normal',
+                          name=conv_name_base + '2c')(x)
+        x = layers.BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
 
-    x = layers.add([x, input_tensor])
-    x = layers.Activation('relu')(x)
+    with get_device_context('res' + str(stage) + block, device_assignment):
+        x = layers.add([x, input_tensor])
+        x = layers.Activation('relu')(x)
+
     return x
 
 
@@ -83,7 +106,8 @@ def conv_block(input_tensor,
                filters,
                stage,
                block,
-               strides=(2, 2)):
+               strides=(2, 2),
+               device_assignment=None):
     """A block that has a conv layer at shortcut.
 
     # Arguments
@@ -110,31 +134,36 @@ def conv_block(input_tensor,
     conv_name_base = 'res' + str(stage) + block + '_branch'
     bn_name_base = 'bn' + str(stage) + block + '_branch'
 
-    x = layers.Conv2D(filters1, (1, 1), strides=strides,
-                      kernel_initializer='he_normal',
-                      name=conv_name_base + '2a')(input_tensor)
-    x = layers.BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
-    x = layers.Activation('relu')(x)
+    with get_device_context(conv_name_base + '2a', device_assignment):
+        x = layers.Conv2D(filters1, (1, 1), strides=strides,
+                          kernel_initializer='he_normal',
+                          name=conv_name_base + '2a')(input_tensor)
+        x = layers.BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
+        x = layers.Activation('relu')(x)
 
-    x = layers.Conv2D(filters2, kernel_size, padding='same',
-                      kernel_initializer='he_normal',
-                      name=conv_name_base + '2b')(x)
-    x = layers.BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
-    x = layers.Activation('relu')(x)
+    with get_device_context(conv_name_base + '2b', device_assignment):
+        x = layers.Conv2D(filters2, kernel_size, padding='same',
+                          kernel_initializer='he_normal',
+                          name=conv_name_base + '2b')(x)
+        x = layers.BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
+        x = layers.Activation('relu')(x)
 
-    x = layers.Conv2D(filters3, (1, 1),
-                      kernel_initializer='he_normal',
-                      name=conv_name_base + '2c')(x)
-    x = layers.BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
+    with get_device_context(conv_name_base + '2c', device_assignment):
+        x = layers.Conv2D(filters3, (1, 1),
+                          kernel_initializer='he_normal',
+                          name=conv_name_base + '2c')(x)
+        x = layers.BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
 
-    shortcut = layers.Conv2D(filters3, (1, 1), strides=strides,
-                             kernel_initializer='he_normal',
-                             name=conv_name_base + '1')(input_tensor)
-    shortcut = layers.BatchNormalization(
-        axis=bn_axis, name=bn_name_base + '1')(shortcut)
+    with get_device_context(conv_name_base + '1', device_assignment):
+        shortcut = layers.Conv2D(filters3, (1, 1), strides=strides,
+                                 kernel_initializer='he_normal',
+                                 name=conv_name_base + '1')(input_tensor)
+        shortcut = layers.BatchNormalization(
+            axis=bn_axis, name=bn_name_base + '1')(shortcut)
 
-    x = layers.add([x, shortcut])
-    x = layers.Activation('relu')(x)
+    with get_device_context('res' + str(stage) + block, device_assignment):
+        x = layers.add([x, shortcut])
+        x = layers.Activation('relu')(x)
     return x
 
 
@@ -144,6 +173,7 @@ def ResNet50(include_top=True,
              input_shape=None,
              pooling=None,
              classes=1000,
+             device_assignment=None,
              **kwargs):
     """Instantiates the ResNet50 architecture.
 
@@ -208,32 +238,35 @@ def ResNet50(include_top=True,
                                       data_format=backend.image_data_format(),
                                       require_flatten=include_top,
                                       weights=weights)
-
-    # data
-    if input_tensor is None:
-        img_input = layers.Input(shape=input_shape)
-    else:
-        if not backend.is_keras_tensor(input_tensor):
-            img_input = layers.Input(tensor=input_tensor, shape=input_shape)
+    with get_device_context('data', device_assignment):
+        # data
+        if input_tensor is None:
+            img_input = layers.Input(shape=input_shape)
         else:
-            img_input = input_tensor
-    if backend.image_data_format() == 'channels_last':
-        bn_axis = 3
-    else:
-        bn_axis = 1
+            if not backend.is_keras_tensor(input_tensor):
+                img_input = layers.Input(tensor=input_tensor, shape=input_shape)
+            else:
+                img_input = input_tensor
+        if backend.image_data_format() == 'channels_last':
+            bn_axis = 3
+        else:
+            bn_axis = 1
 
-    # conv1
-    x = layers.ZeroPadding2D(padding=(3, 3), name='conv1_pad')(img_input)
-    x = layers.Conv2D(64, (7, 7),
-                      strides=(2, 2),
-                      padding='valid',
-                      kernel_initializer='he_normal',
-                      name='conv1')(x)
-    x = layers.BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
-    x = layers.Activation('relu')(x)
-    # pool1
-    x = layers.ZeroPadding2D(padding=(1, 1), name='pool1_pad')(x)
-    x = layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
+    with get_device_context('conv1', device_assignment):
+        # conv1
+        x = layers.ZeroPadding2D(padding=(3, 3), name='conv1_pad')(img_input)
+        x = layers.Conv2D(64, (7, 7),
+                          strides=(2, 2),
+                          padding='valid',
+                          kernel_initializer='he_normal',
+                          name='conv1')(x)
+        x = layers.BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
+        x = layers.Activation('relu')(x)
+
+    with get_device_context('pool1', device_assignment):
+        # pool1
+        x = layers.ZeroPadding2D(padding=(1, 1), name='pool1_pad')(x)
+        x = layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
 
     # res2a
     x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
@@ -272,10 +305,13 @@ def ResNet50(include_top=True,
     x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
 
     if include_top:
-        # pool5
-        x = layers.GlobalAveragePooling2D(name='avg_pool')(x)
-        # fc1000 + prob
-        x = layers.Dense(classes, activation='softmax', name='fc1000')(x)
+        with get_device_context('pool5', device_assignment):
+            # pool5
+            x = layers.GlobalAveragePooling2D(name='avg_pool')(x)
+
+        with get_device_context('fc1000' + device_assignment):
+            # fc1000 + prob
+            x = layers.Dense(classes, activation='softmax', name='fc1000')(x)
     else:
         if pooling == 'avg':
             x = layers.GlobalAveragePooling2D()(x)
