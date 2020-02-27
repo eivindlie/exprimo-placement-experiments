@@ -59,12 +59,13 @@ batch_times = []
 print('Starting training')
 i = 0
 for image_batch, label_batch in train_batches:
-    print(f'Batch {i + 1}/11')
+    print(f'Batch {i + 1}/11...', end='')
     start_time = time.clock()
     model.train_on_batch(image_batch, label_batch)
     end_time = time.clock()
 
     elapsed_time = end_time - start_time
+    print(f'\t{elapsed_time}ms')
     batch_times.append(elapsed_time)
 
     i += 1
