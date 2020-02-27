@@ -309,7 +309,7 @@ def ResNet50(include_top=True,
             # pool5
             x = layers.GlobalAveragePooling2D(name='avg_pool')(x)
 
-        with get_device_context('fc1000' + device_assignment):
+        with get_device_context('fc1000', device_assignment):
             # fc1000 + prob
             x = layers.Dense(classes, activation='softmax', name='fc1000')(x)
     else:
