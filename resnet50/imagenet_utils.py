@@ -8,7 +8,7 @@ import json
 import warnings
 import numpy as np
 
-from . import get_submodules_from_kwargs
+from utils import get_submodules_from_kwargs
 
 CLASS_INDEX = None
 CLASS_INDEX_PATH = ('https://storage.googleapis.com/download.tensorflow.org/'
