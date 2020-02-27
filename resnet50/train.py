@@ -56,10 +56,12 @@ model.compile(
 
 batch_times = []
 
+NUM_BATCHES = 11
+
 print('Starting training')
 i = 0
 for image_batch, label_batch in train_batches:
-    print(f'Batch {i + 1}/11...', end='')
+    print(f'Batch {i + 1}/{NUM_BATCHES}...', end='')
     start_time = time.clock()
     model.train_on_batch(image_batch, label_batch)
     end_time = time.clock()
@@ -69,7 +71,7 @@ for image_batch, label_batch in train_batches:
     batch_times.append(elapsed_time)
 
     i += 1
-    if i > 11:
+    if i >= NUM_BATCHES:
         break
 
 print(f'Batch times: {batch_times}')
