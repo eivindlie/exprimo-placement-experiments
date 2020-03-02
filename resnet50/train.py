@@ -31,10 +31,6 @@ get_label_name = metadata.features['label'].int2str
 IMG_SIZE = 224
 
 
-with open(DEVICE_ASSIGNMENT_PATH) as f:
-    device_assignment = json.load(f)
-
-
 def format_example(image, label):
     image = tf.cast(image, tf.float32)
     image = (image / 127.5) - 1
@@ -53,36 +49,47 @@ validation_batches = validation.batch(BATCH_SIZE)
 
 IMG_SHAPE = (IMG_SIZE, IMG_SIZE, 3)
 
-base_model = ResNet50(input_shape=IMG_SHAPE, include_top=True, weights=None, classes=1000,
-                      device_assignment=device_assignment)
 
-model = base_model
+def train_with_placement(placement_path, num_batches=50):
+    num_batches += 1
 
-model.compile(
-    optimizer=tf.keras.optimizers.SGD(lr=0.01),
-    loss=tf.keras.losses.CategoricalCrossentropy(),
-)
+    with open(placement_path) as f:
+        device_assignment = json.load(f)
 
-batch_times = []
+    base_model = ResNet50(input_shape=IMG_SHAPE, include_top=True, weights=None, classes=1000,
+                          device_assignment=device_assignment)
 
-NUM_BATCHES = 50 + 1
+    model = base_model
 
-print('Starting training')
-i = 0
-for image_batch, label_batch in train_batches:
-    print(f'Batch {i + 1}/{NUM_BATCHES}...', end='')
-    start_time = time.clock()
-    model.train_on_batch(image_batch, label_batch)
-    end_time = time.clock()
+    model.compile(
+        optimizer=tf.keras.optimizers.SGD(lr=0.01),
+        loss=tf.keras.losses.CategoricalCrossentropy(),
+    )
 
-    elapsed_time = (end_time - start_time) * 1000
-    print(f'\t{elapsed_time}ms')
-    batch_times.append(elapsed_time)
+    batch_times = []
 
-    i += 1
-    if i >= NUM_BATCHES:
-        break
+    print('\n\n\nStarting training')
+    i = 0
+    for image_batch, label_batch in train_batches:
+        print(f'Batch {i + 1}/{num_batches}...', end='')
+        start_time = time.clock()
+        model.train_on_batch(image_batch, label_batch)
+        end_time = time.clock()
 
-print(f'Batch times: {batch_times}')
+        elapsed_time = (end_time - start_time) * 1000
+        print(f'\t{elapsed_time}ms')
+        batch_times.append(elapsed_time)
 
-#history = model.fit(train_batches, epochs=1, validation_data=validation_batches)
+        i += 1
+        if i >= num_batches:
+            break
+
+    return batch_times[1:]
+
+    # print(f'Batch times: {batch_times}')
+
+    # history = model.fit(train_batches, epochs=1, validation_data=validation_batches)
+
+
+if __name__ == '__main__':
+    train_with_placement(DEVICE_ASSIGNMENT_PATH)
