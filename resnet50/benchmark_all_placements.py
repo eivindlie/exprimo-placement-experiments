@@ -15,4 +15,4 @@ for file in os.listdir(placement_directory):
         batch_times = train_with_placement(os.path.join(placement_directory, file))
 
     with open(results_file, 'a') as f:
-        f.write(f'{file}, {batch_times.join(",")}\n')
+        f.write(f'{file}, {",".join(batch_times)}\n')
