@@ -50,7 +50,7 @@ def get_device_context(layer, device_assignment):
     else:
         device_map = {
             0: '/CPU:0',
-            1: '/CPU:1',
+            1: '/CPU:0',
             2: '/GPU:0',
             3: '/GPU:1'
         }
