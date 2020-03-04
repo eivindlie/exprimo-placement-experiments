@@ -11,6 +11,14 @@ from resnet import resnet50
 
 BATCH_SIZE = 128
 
+device_lookup = {
+    0: 'cpu:0',
+    1: 'cpu:0',
+    2: 'cuda:0',
+    3: 'cuda:1'
+}
+
+
 preprocess = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -35,6 +43,14 @@ def benchmark_with_placement(batches=50, placement='cuda:0', lr=0.01):
     print('Starting benchmark...')
 
     model = resnet50(pretrained=False, placement=placement if isinstance(placement, dict) else None)
+
+    if placement is None:
+        placement = 'cpu:0'
+    elif isinstance(placement, dict):
+        translated_placement = {}
+        for layer_name, device in placement.keys():
+            translated_placement[layer_name] = device_lookup[device]
+        placement = translated_placement
 
     if isinstance(placement, str):
         input_device = output_device = torch.device(placement)
