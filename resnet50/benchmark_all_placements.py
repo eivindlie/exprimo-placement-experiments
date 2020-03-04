@@ -1,4 +1,4 @@
-import resnet50
+import resnet
 import os
 import json
 
