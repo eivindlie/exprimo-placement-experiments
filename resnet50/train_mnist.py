@@ -39,7 +39,7 @@ test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=128, shuffle=
 
 model.train()
 
-for epoch in range(50):
+for epoch in range(10):
     running_loss = 0.0
     for i, batch in enumerate(train_loader):
         batch = batch[0].to(input_device), batch[1].to(output_device)
