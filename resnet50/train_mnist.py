@@ -57,7 +57,7 @@ with torch.no_grad():
     for data in test_loader:
         data = data[0].to(input_device), data[1].to(output_device)
         images, labels = data
-        outputs = net(images)
+        outputs = model(images)
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
