@@ -83,6 +83,10 @@ class Bottleneck(nn.Module):
                  base_width=64, dilation=1, norm_layer=None,
                  name='', placement=None):
         super(Bottleneck, self).__init__()
+
+        self.placement = placement
+        self.name = name
+
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         width = int(planes * (base_width / 64.)) * groups
@@ -107,19 +111,23 @@ class Bottleneck(nn.Module):
     def forward(self, x):
         identity = x
 
-        out = self.conv1(x.to(self.conv1.device))
-        out = self.bn1(out.to(self.bn1.device))
-        out = self.relu(out.to(self.relu.device))
+        device = torch.device(self.placement[f'{self.name}_branch2a'])
+        out = self.conv1(x.to(device))
+        out = self.bn1(out)
+        out = self.relu(out)
 
-        out = self.conv2(out.to(self.conv2.device))
-        out = self.bn2(out.to(self.bn2.device))
-        out = self.relu(out.to(self.relu.device))
+        device = torch.device(self.placement[f'{self.name}_branch2b'])
+        out = self.conv2(out.to(device))
+        out = self.bn2(out)
+        out = self.relu(out)
 
-        out = self.conv3(out.to(self.conv3.device))
-        out = self.bn3(out.to(self.bn3.device))
+        device = torch.device(self.placement[f'{self.name}_branch2c'])
+        out = self.conv3(out.to(device))
+        out = self.bn3(out)
 
         if self.downsample is not None:
-            identity = self.downsample(x.to(self.downsample.device))
+            device = torch.device(self.placement[f'{self.name}_branch1'])
+            identity = self.downsample(x.to(device))
 
         out += identity
         out = self.relu(out.to(self.relu.device))
@@ -236,19 +244,25 @@ class ResNet(nn.Module):
 
     def _forward_impl(self, x):
         # See note [TorchScript super()]
-        x = self.conv1(x.to(self.conv1.device))
-        x = self.bn1(x.to(self.bn1.device))
-        x = self.relu(x.to(self.relu.device))
-        x = self.maxpool(x.to(self.maxpool.device))
+        device = torch.device(self.placement['conv1'])
+        x = self.conv1(x.to(device))
+        x = self.bn1(x)
+        x = self.relu(x)
+
+        device = torch.device(self.placement[f'pool1'])
+        x = self.maxpool(x.to(device))
 
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
 
-        x = self.avgpool(x.to(self.avgpool.device))
-        x = torch.flatten(x, 1)
-        x = self.fc(x.to(self.fc.device))
+        device = torch.device(self.placement[f'pool5'])
+        x = self.avgpool(x.to(device))
+        x = torch.flatten(x, 1, device=device)
+
+        device = torch.device(self.placement[f'fc1000'])
+        x = self.fc(x.to(device))
 
         return x
 
