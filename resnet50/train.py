@@ -29,10 +29,19 @@ def train_single_batch(model, data, criterion, optimizer):
     optimizer.step()
 
 
-def benchmark_with_placement(batches=50, placement=None, lr=0.01):
+def benchmark_with_placement(batches=50, placement='cuda:0', lr=0.01):
     print('Starting benchmark...')
+
     model = resnet50(pretrained=False)
-    criterion = torch.nn.CrossEntropyLoss()  # TODO Move loss to correct device
+
+    if isinstance(placement, str):
+        input_device = output_device = torch.device(placement)
+        model.to(input_device)
+    else:
+        input_device = placement['data']
+        output_device = None
+
+    criterion = torch.nn.CrossEntropyLoss().to(output_device)  # TODO Move loss to correct device
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 
     model.train()
@@ -42,6 +51,9 @@ def benchmark_with_placement(batches=50, placement=None, lr=0.01):
     while b < batches + 1:
         for data in train_loader:
             print(f'Batch {b + 1}/{batches + 1}', end='')
+
+            data = data[0].to(input_device), data[1].to(output_device)
+
             start = time.time()
             train_single_batch(model, data, criterion, optimizer)
             end = time.time()
