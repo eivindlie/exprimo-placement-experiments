@@ -147,11 +147,11 @@ class ResNet(nn.Module):
         # ResNet50: layers = [3, 4, 6, 3]
 
         if placement is None:
-            self.placement = defaultdict(lambda x: 'cpu:0')
+            self.placement = defaultdict(lambda: 'cpu:0')
         elif isinstance(placement, str):
-            self.placement = defaultdict(lambda x: placement)
+            self.placement = defaultdict(lambda: placement)
         else:
-            self.placement = defaultdict(lambda x: 'cpu:0', placement)
+            self.placement = defaultdict(lambda: 'cpu:0', placement)
 
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
