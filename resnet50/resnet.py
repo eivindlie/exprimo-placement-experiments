@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import torch
 import torch.nn as nn
 from utils import load_state_dict_from_url
@@ -78,19 +80,27 @@ class Bottleneck(nn.Module):
     __constants__ = ['downsample']
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
-                 base_width=64, dilation=1, norm_layer=None):
+                 base_width=64, dilation=1, norm_layer=None,
+                 name='', placement=None):
         super(Bottleneck, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         width = int(planes * (base_width / 64.)) * groups
         # Both self.conv2 and self.downsample layers downsample the input when stride != 1
-        self.conv1 = conv1x1(inplanes, width)
-        self.bn1 = norm_layer(width)
-        self.conv2 = conv3x3(width, width, stride, groups, dilation)
-        self.bn2 = norm_layer(width)
-        self.conv3 = conv1x1(width, planes * self.expansion)
-        self.bn3 = norm_layer(planes * self.expansion)
-        self.relu = nn.ReLU(inplace=True)
+
+        device = torch.device(placement[f'{name}_branch2a'])
+        self.conv1 = conv1x1(inplanes, width).to(device)
+        self.bn1 = norm_layer(width).to(device)
+
+        device = torch.device(placement[f'{name}_branch2b'])
+        self.conv2 = conv3x3(width, width, stride, groups, dilation).to(device)
+        self.bn2 = norm_layer(width).to(device)
+
+        device = torch.device(placement[f'{name}_branch2c'])
+        self.conv3 = conv1x1(width, planes * self.expansion).to(device)
+        self.bn3 = norm_layer(planes * self.expansion).to(device)
+        self.relu = nn.ReLU(inplace=True).to(device)
+
         self.downsample = downsample
         self.stride = stride
 
@@ -121,8 +131,17 @@ class ResNet(nn.Module):
 
     def __init__(self, block, layers, num_classes=1000, zero_init_residual=False,
                  groups=1, width_per_group=64, replace_stride_with_dilation=None,
-                 norm_layer=None):
+                 norm_layer=None, placement=None):
         super(ResNet, self).__init__()
+        # ResNet50: layers = [3, 4, 6, 3]
+
+        if placement is None:
+            self.placement = defaultdict(lambda x: 'cpu:0')
+        elif isinstance(placement, str):
+            self.placement = defaultdict(lambda x: placement)
+        else:
+            self.placement = defaultdict(lambda x: 'cpu:0', placement)
+
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self._norm_layer = norm_layer
@@ -138,20 +157,33 @@ class ResNet(nn.Module):
                              "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
         self.groups = groups
         self.base_width = width_per_group
+
+        device = torch.device(self.placement['conv1'])
         self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
-                               bias=False)
-        self.bn1 = norm_layer(self.inplanes)
-        self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, layers[0])
+                               bias=False).to(device)
+        self.bn1 = norm_layer(self.inplanes).to(device)
+        self.relu = nn.ReLU(inplace=True).to(device)
+
+        device = torch.device(self.placement['pool1'])
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1).to(device)
+
+        self.layer1 = self._make_layer(block, 64, layers[0],
+                                       name='res2')
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2,
-                                       dilate=replace_stride_with_dilation[0])
+                                       dilate=replace_stride_with_dilation[0],
+                                       name='res3')
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2,
-                                       dilate=replace_stride_with_dilation[1])
+                                       dilate=replace_stride_with_dilation[1],
+                                       name='res4')
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2,
-                                       dilate=replace_stride_with_dilation[2])
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(512 * block.expansion, num_classes)
+                                       dilate=replace_stride_with_dilation[2],
+                                       name='res5')
+
+        device = torch.device(self.placement['pool5'])
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1)).to(device)
+
+        device = torch.device(self.placement['fc1000'])
+        self.fc = nn.Linear(512 * block.expansion, num_classes).to(device)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -170,7 +202,9 @@ class ResNet(nn.Module):
                 elif isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block, planes, blocks, stride=1, dilate=False):
+    def _make_layer(self, block, planes, blocks, stride=1, dilate=False, name=''):
+        # planes = 63, 128, 256, 512
+        # ResNet50: blocks = 3, 4, 6, 3
         norm_layer = self._norm_layer
         downsample = None
         previous_dilation = self.dilation
@@ -178,19 +212,25 @@ class ResNet(nn.Module):
             self.dilation *= stride
             stride = 1
         if stride != 1 or self.inplanes != planes * block.expansion:
+            device = torch.device(self.placement[f'{name}a_branch1'])
             downsample = nn.Sequential(
                 conv1x1(self.inplanes, planes * block.expansion, stride),
                 norm_layer(planes * block.expansion),
-            )
+            ).to(device)
 
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample, self.groups,
-                            self.base_width, previous_dilation, norm_layer))
+                            self.base_width, previous_dilation, norm_layer, name=name + 'a', placement=self.placement))
         self.inplanes = planes * block.expansion
-        for _ in range(1, blocks):
+
+        def block_to_char(block_number):
+            return chr(ord('a') + block_number)
+
+        for b in range(1, blocks):
+            block_name = block_to_char(b)
             layers.append(block(self.inplanes, planes, groups=self.groups,
                                 base_width=self.base_width, dilation=self.dilation,
-                                norm_layer=norm_layer))
+                                norm_layer=norm_layer, name=f'{name}{block_name}', placement=self.placement))
 
         return nn.Sequential(*layers)
 
@@ -216,8 +256,8 @@ class ResNet(nn.Module):
         return self._forward_impl(x)
 
 
-def _resnet(arch, block, layers, pretrained, progress, **kwargs):
-    model = ResNet(block, layers, **kwargs)
+def _resnet(arch, block, layers, pretrained, progress, placement=None, **kwargs):
+    model = ResNet(block, layers, placement=placement, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls[arch],
                                               progress=progress)
@@ -249,7 +289,7 @@ def resnet34(pretrained=False, progress=True, **kwargs):
                    **kwargs)
 
 
-def resnet50(pretrained=False, progress=True, **kwargs):
+def resnet50(pretrained=False, progress=True, placement=None, **kwargs):
     r"""ResNet-50 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
 
@@ -258,6 +298,7 @@ def resnet50(pretrained=False, progress=True, **kwargs):
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress,
+                   placement=placement,
                    **kwargs)
 
 
