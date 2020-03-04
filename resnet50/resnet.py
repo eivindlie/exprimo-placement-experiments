@@ -107,22 +107,22 @@ class Bottleneck(nn.Module):
     def forward(self, x):
         identity = x
 
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
+        out = self.conv1(x.to(self.conv1.device))
+        out = self.bn1(out.to(self.bn1.device))
+        out = self.relu(out.to(self.relu.device))
 
-        out = self.conv2(out)
-        out = self.bn2(out)
-        out = self.relu(out)
+        out = self.conv2(out.to(self.conv2.device))
+        out = self.bn2(out.to(self.bn2.device))
+        out = self.relu(out.to(self.relu.device))
 
-        out = self.conv3(out)
-        out = self.bn3(out)
+        out = self.conv3(out.to(self.conv3.device))
+        out = self.bn3(out.to(self.bn3.device))
 
         if self.downsample is not None:
-            identity = self.downsample(x)
+            identity = self.downsample(x.to(self.downsample.device))
 
         out += identity
-        out = self.relu(out)
+        out = self.relu(out.to(self.relu.device))
 
         return out
 
@@ -236,19 +236,19 @@ class ResNet(nn.Module):
 
     def _forward_impl(self, x):
         # See note [TorchScript super()]
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
+        x = self.conv1(x.to(self.conv1.device))
+        x = self.bn1(x.to(self.bn1.device))
+        x = self.relu(x.to(self.relu.device))
+        x = self.maxpool(x.to(self.maxpool.device))
 
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
 
-        x = self.avgpool(x)
+        x = self.avgpool(x.to(self.avgpool.device))
         x = torch.flatten(x, 1)
-        x = self.fc(x)
+        x = self.fc(x.to(self.fc.device))
 
         return x
 
