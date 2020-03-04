@@ -262,7 +262,7 @@ class ResNet(nn.Module):
 
         device = torch.device(self.placement[f'pool5'])
         x = self.avgpool(x.to(device))
-        x = torch.flatten(x, 1, device=device)
+        x = torch.flatten(x, 1)
 
         device = torch.device(self.placement[f'fc1000'])
         x = self.fc(x.to(device))
