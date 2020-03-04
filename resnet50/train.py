@@ -44,7 +44,14 @@ def train_single_batch(model, data, criterion, optimizer):
     return loss
 
 
-model, criterion, optimizer, input_device, output_device = load_model_with_placement(placement, lr=0.01, classes=10)
+dataset_classes = {
+    'mnist': 10,
+    'cats_vs_dogs': 2
+}
+
+
+model, criterion, optimizer, input_device, output_device = load_model_with_placement(placement, lr=LEARNING_RATE,
+                                                                                     classes=dataset_classes[DATASET])
 
 if DATASET == 'mnist':
     preprocess = transforms.Compose([
@@ -54,16 +61,28 @@ if DATASET == 'mnist':
     ])
 
     train_dataset = torchvision.datasets.MNIST('./mnist_data', train=True, download=True, transform=preprocess)
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=2)
-
     test_dataset = torchvision.datasets.MNIST('./mnist_data', train=False, download=True, transform=preprocess)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=128, shuffle=False, num_workers=2)
+
+elif DATASET == 'cats_vs_dogs':
+    preprocess = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+
+    train_dataset = torchvision.datasets.ImageFolder('./cvd_data/train', transform=preprocess)
+    test_dataset = torchvision.datasets.ImageFolder('./cvd_data/test', transform=preprocess)
+
+else:
+    sys.exit(1)
+
+test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
 
 model.train()
 
 average_batch_times = []
 
-for epoch in range(10):
+for epoch in range(EPOCHS):
     running_loss = 0.0
     running_time = 0.0
     batches = 0
