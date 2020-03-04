@@ -129,8 +129,11 @@ class Bottleneck(nn.Module):
             device = torch.device(self.placement[f'{self.name}_branch1'])
             identity = self.downsample(x.to(device))
 
+        device = torch.device(self.placement[f'{self.name}'])
+        out = out.to(device)
+        identity = identity.to(device)
         out += identity
-        out = self.relu(out.to(self.relu.device))
+        out = self.relu(out)
 
         return out
 
