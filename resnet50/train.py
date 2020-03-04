@@ -1,4 +1,6 @@
 import time
+import sys
+import json
 
 from torchvision import transforms
 import torchvision
@@ -70,4 +72,10 @@ def benchmark_with_placement(batches=50, placement='cuda:0', lr=0.01):
 
 
 if __name__ == '__main__':
-    benchmark_with_placement()
+    placement = 'cpu:0'
+    if len(sys.argv) > 1:
+        placement_path = sys.argv[1]
+        with open(placement_path) as f:
+            placement = json.load(f)
+
+    benchmark_with_placement(placement=placement)
