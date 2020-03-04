@@ -46,7 +46,7 @@ def benchmark_with_placement(batches=50, placement='cuda:0', lr=0.01):
         placement = 'cpu:0'
     elif isinstance(placement, dict):
         translated_placement = {}
-        for layer_name, device in placement.keys():
+        for layer_name, device in placement.items():
             translated_placement[layer_name] = device_lookup[device]
         placement = translated_placement
 
