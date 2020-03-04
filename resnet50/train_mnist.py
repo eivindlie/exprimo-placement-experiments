@@ -58,7 +58,7 @@ for epoch in range(10):
         if i % 50 == 49:
             print(f'[Epoch {epoch + 1}, Batch {i + 1}] Loss: {running_loss / 50}')
             running_loss = 0
-    
+
     average_batch_time = running_time / batches
     print(f'[Epoch {epoch + 1}] Average batch time: {average_batch_time:.3f}ms')
     average_batch_times.append(average_batch_time)
