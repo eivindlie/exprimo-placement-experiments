@@ -1,5 +1,6 @@
 import sys
 import json
+import time
 
 from utils import load_model_with_placement
 import torchvision
@@ -39,16 +40,28 @@ test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=128, shuffle=
 
 model.train()
 
+average_batch_times = []
+
 for epoch in range(10):
     running_loss = 0.0
+    running_time = 0.0
+    batches = 0
     for i, batch in enumerate(train_loader):
+        batches += 1
         batch = batch[0].to(input_device), batch[1].to(output_device)
+        start = time.time()
         loss = train_single_batch(model, batch, criterion, optimizer)
+        end = time.time()
+        running_time += (end - start) * 1000
         running_loss += loss.item()
 
         if i % 50 == 49:
             print(f'[Epoch {epoch + 1}, Batch {i + 1}] Loss: {running_loss / 50}')
             running_loss = 0
+    
+    average_batch_time = running_time / batches
+    print(f'[Epoch {epoch + 1}] Average batch time: {average_batch_time:.3f}ms')
+    average_batch_times.append(average_batch_time)
 
 model.eval()
 correct = 0
