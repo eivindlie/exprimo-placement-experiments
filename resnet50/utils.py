@@ -8,7 +8,7 @@ except ImportError:
     from torch.utils.model_zoo import load_url as load_state_dict_from_url
 
 
-def load_model_with_placement(placement, lr=0.01):
+def load_model_with_placement(placement, lr=0.01, classes=1000):
     device_lookup = {
         0: 'cpu:0',
         1: 'cpu:0',
@@ -24,7 +24,7 @@ def load_model_with_placement(placement, lr=0.01):
             translated_placement[layer_name] = device_lookup[device]
         placement = translated_placement
 
-    model = resnet50(pretrained=False, placement=placement)
+    model = resnet50(pretrained=False, placement=placement, num_classes=classes)
 
     if isinstance(placement, str):
         input_device = output_device = torch.device(placement)
