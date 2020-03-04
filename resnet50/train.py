@@ -42,8 +42,6 @@ def train_single_batch(model, data, criterion, optimizer):
 def benchmark_with_placement(batches=50, placement='cuda:0', lr=0.01):
     print('Starting benchmark...')
 
-    model = resnet50(pretrained=False, placement=placement if isinstance(placement, dict) else None)
-
     if placement is None:
         placement = 'cpu:0'
     elif isinstance(placement, dict):
@@ -51,6 +49,8 @@ def benchmark_with_placement(batches=50, placement='cuda:0', lr=0.01):
         for layer_name, device in placement.keys():
             translated_placement[layer_name] = device_lookup[device]
         placement = translated_placement
+
+    model = resnet50(pretrained=False, placement=placement if isinstance(placement, dict) else None)
 
     if isinstance(placement, str):
         input_device = output_device = torch.device(placement)
