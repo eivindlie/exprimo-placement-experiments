@@ -8,15 +8,9 @@ import torch.utils.data
 import torch
 
 from resnet import resnet50
+from utils import load_model_with_placement
 
 BATCH_SIZE = 128
-
-device_lookup = {
-    0: 'cpu:0',
-    1: 'cpu:0',
-    2: 'cuda:0',
-    3: 'cuda:1'
-}
 
 
 preprocess = transforms.Compose([
@@ -42,25 +36,7 @@ def train_single_batch(model, data, criterion, optimizer):
 def benchmark_with_placement(batches=50, placement='cuda:0', lr=0.01):
     print('Starting benchmark...')
 
-    if placement is None:
-        placement = 'cpu:0'
-    elif isinstance(placement, dict):
-        translated_placement = {}
-        for layer_name, device in placement.items():
-            translated_placement[layer_name] = device_lookup[device]
-        placement = translated_placement
-
-    model = resnet50(pretrained=False, placement=placement if isinstance(placement, dict) else None)
-
-    if isinstance(placement, str):
-        input_device = output_device = torch.device(placement)
-        model.to(input_device)
-    else:
-        input_device = placement['conv1']
-        output_device = placement['fc1000']
-
-    criterion = torch.nn.CrossEntropyLoss().to(output_device)  # TODO Move loss to correct device
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    model, criterion, optimizer, input_device, output_device = load_model_with_placement(placement, lr=lr)
 
     model.train()
     batch_times = []
