@@ -65,7 +65,8 @@ if DATASET == 'mnist':
 
 elif DATASET == 'cats_vs_dogs':
     preprocess = transforms.Compose([
-        transforms.Resize(224),
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
