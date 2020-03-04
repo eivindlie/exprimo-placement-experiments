@@ -94,4 +94,4 @@ if __name__ == '__main__':
         with open(placement_path) as f:
             placement = json.load(f)
 
-    benchmark_with_placement(placement=placement)
+    print(benchmark_with_placement(placement=placement))
