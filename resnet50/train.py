@@ -21,17 +21,17 @@ parser.add_argument('--placement', '-p', dest='placement', default='cuda:0',
 
 args = parser.parse_args()
 
-EPOCHS = args['epochs']
-DATASET = args['dataset']
-LEARNING_RATE = args['lr']
-BATCH_SIZE = args['batch_size']
+EPOCHS = args.epochs
+DATASET = args.dataset
+LEARNING_RATE = args.lr
+BATCH_SIZE = args.batch_size
 
 
-if os.path.exists(args['placement']):
-    with open(args['placement']) as f:
+if os.path.exists(args.placement):
+    with open(args.placement) as f:
         placement = json.load(f)
 else:
-    placement = args['placement']
+    placement = args.placement
 
 
 def train_single_batch(model, data, criterion, optimizer):
