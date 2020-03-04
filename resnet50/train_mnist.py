@@ -26,6 +26,7 @@ if len(sys.argv) > 1:
 model, criterion, optimizer, input_device, output_device = load_model_with_placement(placement, lr=0.01, classes=10)
 
 preprocess = transforms.Compose([
+    transforms.Grayscale(3),
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
