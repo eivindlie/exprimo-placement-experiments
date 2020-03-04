@@ -1,11 +1,37 @@
 import sys
 import json
+import os
 import time
+import argparse
 
 from utils import load_model_with_placement
 import torchvision
 from torchvision import transforms
 import torch.utils.data
+
+parser = argparse.ArgumentParser(description='Train ResNet-50')
+parser.add_argument('--epochs', dest='epochs', default=10, type=int, help='Number of epochs to train the network for.')
+parser.add_argument('--dataset', dest='dataset', default='mnist',
+                    help='The dataset that the network should be trained on. [mnist, cats_vs_dogs]')
+parser.add_argument('--lr', dest='lr', default=0.01, help='Learning rate of the optimizer')
+parser.add_argument('--batch_size', dest='batch_size', default=128, help='Batch size for the learning process')
+parser.add_argument('--placement', '-p', dest='placement', default='cuda:0',
+                    help='Placement specification for the network; either a single device '
+                         'or path to an assignment file.')
+
+args = parser.parse_args()
+
+EPOCHS = args['epochs']
+DATASET = args['dataset']
+LEARNING_RATE = args['lr']
+BATCH_SIZE = args['batch_size']
+
+
+if os.path.exists(args['placement']):
+    with open(args['placement']) as f:
+        placement = json.load(f)
+else:
+    placement = args['placement']
 
 
 def train_single_batch(model, data, criterion, optimizer):
@@ -18,25 +44,20 @@ def train_single_batch(model, data, criterion, optimizer):
     return loss
 
 
-placement = 'cuda:0'
-if len(sys.argv) > 1:
-    placement_path = sys.argv[1]
-    with open(placement_path) as f:
-        placement = json.load(f)
-
 model, criterion, optimizer, input_device, output_device = load_model_with_placement(placement, lr=0.01, classes=10)
 
-preprocess = transforms.Compose([
-    transforms.Grayscale(3),
-    transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-])
+if DATASET == 'mnist':
+    preprocess = transforms.Compose([
+        transforms.Grayscale(3),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
 
-train_dataset = torchvision.datasets.MNIST('./mnist_data', train=True, download=True, transform=preprocess)
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=2)
+    train_dataset = torchvision.datasets.MNIST('./mnist_data', train=True, download=True, transform=preprocess)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=2)
 
-test_dataset = torchvision.datasets.MNIST('./mnist_data', train=False, download=True, transform=preprocess)
-test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=128, shuffle=False, num_workers=2)
+    test_dataset = torchvision.datasets.MNIST('./mnist_data', train=False, download=True, transform=preprocess)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=128, shuffle=False, num_workers=2)
 
 model.train()
 
