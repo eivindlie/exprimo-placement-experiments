@@ -2,7 +2,7 @@ import resnet50
 import os
 import json
 
-from train import train_with_placement
+train_with_placement = lambda x: None
 
 placement_directory = ''
 results_file = ''
