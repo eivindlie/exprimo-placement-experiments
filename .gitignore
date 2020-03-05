@@ -131,3 +131,7 @@ dmypy.json
 
 # Experimental result
 experiment_results/
+
+
+# Data directories
+*data/
