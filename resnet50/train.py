@@ -90,9 +90,11 @@ for epoch in range(EPOCHS):
     batches = 0
     for i, batch in enumerate(train_loader):
         batches += 1
+        torch.cuda.synchronize()
         batch = batch[0].to(input_device), batch[1].to(output_device)
         start = time.time()
         loss = train_single_batch(model, batch, criterion, optimizer)
+        torch.cuda.synchronize()
         end = time.time()
         running_time += (end - start) * 1000
         running_loss += loss.item()
