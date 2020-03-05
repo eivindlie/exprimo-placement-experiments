@@ -46,10 +46,12 @@ def benchmark_with_placement(batches=50, placement='cuda:0', lr=0.01):
         for data in train_loader:
             print(f'Batch {b + 1}/{batches + 1}', end='')
 
+            torch.cuda.synchronize()
             data = data[0].to(input_device), data[1].to(output_device)
 
             start = time.time()
             train_single_batch(model, data, criterion, optimizer)
+            torch.cuda.synchronize()
             end = time.time()
 
             batch_times.append((end - start) * 1000)
