@@ -19,12 +19,13 @@ results_file = args.results_file
 with open(results_file, 'w') as f:
     f.write('')
 
-for file in os.listdir(placement_directory):
+dir_list = os.listdir(placement_directory)
+for i, file in enumerate(dir_list):
     if file.endswith('.json'):
         with open(os.path.join(placement_directory, file)) as f:
             placement = json.load(f)
 
-        print(f'Benchmarking {file}')
+        print(f'Benchmarking assignment {i + 1}/{len(dir_list)}: {file}')
 
         batch_times = benchmark_with_placement(placement=placement)
 
