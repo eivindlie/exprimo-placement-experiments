@@ -63,6 +63,8 @@ def benchmark_with_placement(placement='cuda:0', batches=50, lr=0.01):
             if b >= batches + 1:
                 break
 
+    del model, criterion, optimizer, input_device, output_device
+
     return batch_times[1:]
 
 
