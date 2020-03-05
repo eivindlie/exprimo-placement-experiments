@@ -1,5 +1,6 @@
 import os
 import argparse
+import json
 
 from benchmark import benchmark_with_placement
 
@@ -20,7 +21,10 @@ with open(results_file, 'w') as f:
 
 for file in os.listdir(placement_directory):
     if file.endswith('.json'):
-        batch_times = benchmark_with_placement(placement=os.path.join(placement_directory, file))
+        with open(os.path.join(placement_directory, file)) as f:
+            placement = json.load(f)
+
+        batch_times = benchmark_with_placement(placement=placement)
 
     with open(results_file, 'a') as f:
         f.write(f'{file}, {",".join(map(lambda x: str(x), batch_times))}\n')
