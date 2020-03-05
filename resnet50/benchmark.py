@@ -34,7 +34,7 @@ def train_single_batch(model, data, criterion, optimizer):
     optimizer.step()
 
 
-def benchmark_with_placement(batches=50, placement='cuda:0', lr=0.01):
+def benchmark_with_placement(placement='cuda:0', batches=50, lr=0.01):
     print('Starting benchmark...')
 
     model, criterion, optimizer, input_device, output_device = load_model_with_placement(placement, lr=lr)
