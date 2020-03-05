@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(description='Benchmark ResNet-50 on (fake) Imag
 parser.add_argument('--placement_dir', '-p', dest='placement_dir', default='.', help='The directory that contains '
                                                                                      'device assignment files (in '
                                                                                      'JSON format)')
-parser.add_argument('--results_file', '-p', dest='results_file', default='benchmark_results.csv',
+parser.add_argument('--results_file', '-r', dest='results_file', default='benchmark_results.csv',
                     help='The CSV file that benchmark results will be written to.')
 
 args = parser.parse_args()
