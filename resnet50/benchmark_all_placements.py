@@ -24,6 +24,8 @@ for file in os.listdir(placement_directory):
         with open(os.path.join(placement_directory, file)) as f:
             placement = json.load(f)
 
+        print(f'Benchmarking {file}')
+
         batch_times = benchmark_with_placement(placement=placement)
 
     with open(results_file, 'a') as f:
