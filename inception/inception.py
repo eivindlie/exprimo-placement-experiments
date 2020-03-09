@@ -65,7 +65,7 @@ def inception_v3(pretrained=False, progress=True, **kwargs):
 class Inception3(nn.Module):
 
     def __init__(self, num_classes=1000, aux_logits=True, transform_input=False,
-                 inception_blocks=None, init_weights=True):
+                 inception_blocks=None, init_weights=True, placement=None):
         super(Inception3, self).__init__()
         if inception_blocks is None:
             inception_blocks = [
