@@ -18,7 +18,7 @@ preprocess = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-dataset = torchvision.datasets.FakeData(transform=preprocess, size=500)
+dataset = torchvision.datasets.FakeData(transform=preprocess, image_size=(3, 299, 299), size=500)
 
 train_loader = torch.utils.data.DataLoader(
     dataset, batch_size=BATCH_SIZE, shuffle=True
