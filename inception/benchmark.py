@@ -8,6 +8,7 @@ import torchvision
 import torch.utils.data
 import torch
 
+from train import train_single_batch
 from utils import load_model_with_placement
 
 BATCH_SIZE = 128
@@ -23,14 +24,6 @@ dataset = torchvision.datasets.FakeData(transform=preprocess, image_size=(3, 299
 train_loader = torch.utils.data.DataLoader(
     dataset, batch_size=BATCH_SIZE, shuffle=True
 )
-
-
-def train_single_batch(model, data, criterion, optimizer):
-    output = model(data[0])
-    loss = criterion(output, data[1])
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
 
 
 def benchmark_with_placement(placement='cuda:0', batches=50, lr=0.01):

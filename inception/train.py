@@ -35,8 +35,10 @@ else:
 
 
 def train_single_batch(model, data, criterion, optimizer):
-    output = model(data[0])
-    loss = criterion(output, data[1])
+    output, aux_output = model(data[0])
+    loss1 = criterion(output, data[1])
+    loss2 = criterion(aux_output, data[1])
+    loss = loss1 + 0.4 * loss2
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
