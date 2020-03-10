@@ -25,8 +25,8 @@ def load_model_with_placement(placement, lr=0.01, classes=1000):
         input_device = output_device = torch.device(placement)
         model.to(input_device)
     else:
-        input_device = placement['conv1']
-        output_device = placement['fc1000']
+        input_device = placement['Conv2d_1a_3x3']
+        output_device = placement['softmax']
 
     criterion = torch.nn.CrossEntropyLoss().to(output_device)  # TODO Move loss to correct device
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
