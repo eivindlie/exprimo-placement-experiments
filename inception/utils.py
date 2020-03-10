@@ -19,7 +19,7 @@ def load_model_with_placement(placement, lr=0.01, classes=1000):
             translated_placement[layer_name] = device_lookup[device]
         placement = translated_placement
 
-    model = inception_v3(pretrained=False, placement=placement, num_classes=classes)
+    model = inception_v3(pretrained=False, placement=placement, num_classes=classes, init_weights=False)
 
     if isinstance(placement, str):
         input_device = output_device = torch.device(placement)
