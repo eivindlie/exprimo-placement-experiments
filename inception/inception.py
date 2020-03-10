@@ -139,18 +139,25 @@ class Inception3(nn.Module):
 
     def _forward(self, x):
         # N x 3 x 299 x 299
+        x = x.to(self.get_device('Conv2d_1a_3x3'))
         x = self.Conv2d_1a_3x3(x)
         # N x 32 x 149 x 149
+        x = x.to(self.get_device('Conv2d_2a_3x3'))
         x = self.Conv2d_2a_3x3(x)
         # N x 32 x 147 x 147
+        x = x.to(self.get_device('Conv2d_2b_3x3'))
         x = self.Conv2d_2b_3x3(x)
         # N x 64 x 147 x 147
+        x = x.to(self.get_device('MaxPool_3a_3x3'))
         x = F.max_pool2d(x, kernel_size=3, stride=2)
         # N x 64 x 73 x 73
+        x = x.to(self.get_device('Conv2d_3b_1x1'))
         x = self.Conv2d_3b_1x1(x)
         # N x 80 x 73 x 73
+        x = x.to(self.get_device('Conv2d_4a_3x3'))
         x = self.Conv2d_4a_3x3(x)
         # N x 192 x 71 x 71
+        x = x.to(self.get_device('MaxPool_5a_3x3'))
         x = F.max_pool2d(x, kernel_size=3, stride=2)
         # N x 192 x 35 x 35
         x = self.Mixed_5b(x)
@@ -182,12 +189,16 @@ class Inception3(nn.Module):
         x = self.Mixed_7c(x)
         # N x 2048 x 8 x 8
         # Adaptive average pooling
+        x = x.to(self.get_device('AvgPool_1a_8x8'))
         x = F.adaptive_avg_pool2d(x, (1, 1))
         # N x 2048 x 1 x 1
+        x = x.to(self.get_device('Dropout_1b'))
         x = F.dropout(x, training=self.training)
         # N x 2048 x 1 x 1
+        x = x.to(self.get_device('Conv2d_1c_1x1'))
         x = torch.flatten(x, 1)
         # N x 2048
+        x = x.to(self.get_device('softmax'))
         x = self.fc(x)
         # N x 1000 (num_classes)
         return x, aux
@@ -216,33 +227,63 @@ class InceptionA(nn.Module):
 
     def __init__(self, in_channels, pool_features, conv_block=None, placement=None, name=''):
         super(InceptionA, self).__init__()
+
+        self.placement = placement
+        self.name = name
+
         if conv_block is None:
             conv_block = BasicConv2d
-        self.branch1x1 = conv_block(in_channels, 64, kernel_size=1)
+    
+        # Branch_0
+        self.branch1x1 = conv_block(in_channels, 64, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_0/Conv2d_0a_1x1']))
 
-        self.branch5x5_1 = conv_block(in_channels, 48, kernel_size=1)
-        self.branch5x5_2 = conv_block(48, 64, kernel_size=5, padding=2)
+        # Branch_1
+        self.branch5x5_1 = conv_block(in_channels, 48, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0a_1x1']))
+        self.branch5x5_2 = conv_block(48, 64, kernel_size=5, padding=2)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_5x5']))
 
-        self.branch3x3dbl_1 = conv_block(in_channels, 64, kernel_size=1)
-        self.branch3x3dbl_2 = conv_block(64, 96, kernel_size=3, padding=1)
-        self.branch3x3dbl_3 = conv_block(96, 96, kernel_size=3, padding=1)
+        # Branch_2
+        self.branch3x3dbl_1 = conv_block(in_channels, 64, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0a_1x1']))
+        self.branch3x3dbl_2 = conv_block(64, 96, kernel_size=3, padding=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0b_3x3']))
+        self.branch3x3dbl_3 = conv_block(96, 96, kernel_size=3, padding=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0c_3x3']))
 
-        self.branch_pool = conv_block(in_channels, pool_features, kernel_size=1)
+        # Branch_3
+        self.branch_pool = conv_block(in_channels, pool_features, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_3/Conv2d_0b_1x1']))
 
     def _forward(self, x):
-        branch1x1 = self.branch1x1(x)
+        # Branch_0
+        branch1x1 = x.to(torch.device(self.placement[f'{self.name}/Branch_0/Conv2d_0a_1x1']))
+        branch1x1 = self.branch1x1(branch1x1)
 
-        branch5x5 = self.branch5x5_1(x)
+        # Branch_1
+        branch5x5 = x.to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0a_1x1']))
+        branch5x5 = self.branch5x5_1(branch5x5)
+        branch5x5 = branch5x5.to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_5x5']))
         branch5x5 = self.branch5x5_2(branch5x5)
 
-        branch3x3dbl = self.branch3x3dbl_1(x)
+        # Branch_2
+        branch3x3dbl = x.to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0a_1x1']))
+        branch3x3dbl = self.branch3x3dbl_1(branch3x3dbl)
+        branch3x3dbl = branch3x3dbl.to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0b_3x3']))
         branch3x3dbl = self.branch3x3dbl_2(branch3x3dbl)
+        branch3x3dbl = branch3x3dbl.to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0c_3x3']))
         branch3x3dbl = self.branch3x3dbl_3(branch3x3dbl)
 
-        branch_pool = F.avg_pool2d(x, kernel_size=3, stride=1, padding=1)
+        # Branch_3
+        branch_pool = x.to(torch.device(self.placement[f'{self.name}/Branch_3/AvgPool_0a_3x3']))
+        branch_pool = F.avg_pool2d(branch_pool, kernel_size=3, stride=1, padding=1)
+        branch_pool = branch_pool.to(torch.device(self.placement[f'{self.name}/Branch_3/Conv2d_0b_1x1']))
         branch_pool = self.branch_pool(branch_pool)
 
-        outputs = [branch1x1, branch5x5, branch3x3dbl, branch_pool]
+        concat_device = torch.device(self.placement[f'{self.name}/concat'])
+        outputs = [branch1x1.to(concat_device), branch5x5.to(concat_device),
+                   branch3x3dbl.to(concat_device), branch_pool.to(concat_device)]
         return outputs
 
     def forward(self, x):
@@ -254,24 +295,43 @@ class InceptionB(nn.Module):
 
     def __init__(self, in_channels, conv_block=None, placement=None, name=''):
         super(InceptionB, self).__init__()
+
+        self.placement = placement
+        self.name = name
+
         if conv_block is None:
             conv_block = BasicConv2d
-        self.branch3x3 = conv_block(in_channels, 384, kernel_size=3, stride=2)
 
-        self.branch3x3dbl_1 = conv_block(in_channels, 64, kernel_size=1)
-        self.branch3x3dbl_2 = conv_block(64, 96, kernel_size=3, padding=1)
-        self.branch3x3dbl_3 = conv_block(96, 96, kernel_size=3, stride=2)
+        # Branch_0
+        self.branch3x3 = conv_block(in_channels, 384, kernel_size=3, stride=2)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_0/Conv2d_1a_3x3']))
+
+        # Branch_1
+        self.branch3x3dbl_1 = conv_block(in_channels, 64, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0a_1x1']))
+        self.branch3x3dbl_2 = conv_block(64, 96, kernel_size=3, padding=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_3x3']))
+        self.branch3x3dbl_3 = conv_block(96, 96, kernel_size=3, stride=2)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_3x3']))
 
     def _forward(self, x):
-        branch3x3 = self.branch3x3(x)
+        # Branch_0
+        branch3x3 = x.to(torch.device(self.placement[f'{self.name}/Branch_0/Conv2d_1a_3x3']))
+        branch3x3 = self.branch3x3(branch3x3)
 
-        branch3x3dbl = self.branch3x3dbl_1(x)
+        # Branch_1̈́
+        branch3x3dbl = x.to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0a_1x1']))
+        branch3x3dbl = self.branch3x3dbl_1(branch3x3dbl)
+        branch3x3dbl = branch3x3dbl.to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_3x3']))
         branch3x3dbl = self.branch3x3dbl_2(branch3x3dbl)
         branch3x3dbl = self.branch3x3dbl_3(branch3x3dbl)
 
+        # Branch_2
+        branch_pool = x.to(torch.device(self.placement[f'{self.name}/Branch_2/MaxPool_1a_3x3']))
         branch_pool = F.max_pool2d(x, kernel_size=3, stride=2)
 
-        outputs = [branch3x3, branch3x3dbl, branch_pool]
+        concat_device = torch.device(self.placement[f'{self.name}/concat'])
+        outputs = [branch3x3.to(concat_device), branch3x3dbl.to(concat_device), branch_pool.to(concat_device)]
         return outputs
 
     def forward(self, x):
@@ -283,40 +343,76 @@ class InceptionC(nn.Module):
 
     def __init__(self, in_channels, channels_7x7, conv_block=None, placement=None, name=''):
         super(InceptionC, self).__init__()
+
+        self.placement = placement
+        self.name = name
+
         if conv_block is None:
             conv_block = BasicConv2d
-        self.branch1x1 = conv_block(in_channels, 192, kernel_size=1)
 
+        # Branch_0
+        self.branch1x1 = conv_block(in_channels, 192, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_0/Conv2d_0a_1x1']))
+
+        # Branch_1
         c7 = channels_7x7
-        self.branch7x7_1 = conv_block(in_channels, c7, kernel_size=1)
-        self.branch7x7_2 = conv_block(c7, c7, kernel_size=(1, 7), padding=(0, 3))
-        self.branch7x7_3 = conv_block(c7, 192, kernel_size=(7, 1), padding=(3, 0))
+        self.branch7x7_1 = conv_block(in_channels, c7, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0a_1x1']))
+        self.branch7x7_2 = conv_block(c7, c7, kernel_size=(1, 7), padding=(0, 3))\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_1x7']))
+        self.branch7x7_3 = conv_block(c7, 192, kernel_size=(7, 1), padding=(3, 0))\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_7x1']))
 
-        self.branch7x7dbl_1 = conv_block(in_channels, c7, kernel_size=1)
-        self.branch7x7dbl_2 = conv_block(c7, c7, kernel_size=(7, 1), padding=(3, 0))
-        self.branch7x7dbl_3 = conv_block(c7, c7, kernel_size=(1, 7), padding=(0, 3))
-        self.branch7x7dbl_4 = conv_block(c7, c7, kernel_size=(7, 1), padding=(3, 0))
-        self.branch7x7dbl_5 = conv_block(c7, 192, kernel_size=(1, 7), padding=(0, 3))
+        # Branch_2
+        self.branch7x7dbl_1 = conv_block(in_channels, c7, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0a_1x1']))
+        self.branch7x7dbl_2 = conv_block(c7, c7, kernel_size=(7, 1), padding=(3, 0))\
+            .to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0b_7x1']))
+        self.branch7x7dbl_3 = conv_block(c7, c7, kernel_size=(1, 7), padding=(0, 3))\
+            .to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0c_1x7']))
+        self.branch7x7dbl_4 = conv_block(c7, c7, kernel_size=(7, 1), padding=(3, 0))\
+            .to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0d_7x1']))
+        self.branch7x7dbl_5 = conv_block(c7, 192, kernel_size=(1, 7), padding=(0, 3))\
+            .to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0e_1x7']))
 
-        self.branch_pool = conv_block(in_channels, 192, kernel_size=1)
+        # Branch_3
+        self.branch_pool = conv_block(in_channels, 192, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_3/Conv2d_0b_1x1']))
 
     def _forward(self, x):
-        branch1x1 = self.branch1x1(x)
+        # Branch_0
+        branch1x1 = x.to(torch.device(self.placement[f'{self.name}/Branch_0/Conv2d_0a_1x1']))
+        branch1x1 = self.branch1x1(branch1x1)
 
-        branch7x7 = self.branch7x7_1(x)
+        # Branch_1
+        branch7x7 = x.to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0a_1x1']))
+        branch7x7 = self.branch7x7_1(branch7x7)
+        branch7x7 = branch7x7.to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_1x7']))
         branch7x7 = self.branch7x7_2(branch7x7)
+        branch7x7 = branch7x7.to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_7x1']))
         branch7x7 = self.branch7x7_3(branch7x7)
 
-        branch7x7dbl = self.branch7x7dbl_1(x)
+        # Branch_2
+        branch7x7dbl = x.to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0a_1x1']))
+        branch7x7dbl = self.branch7x7dbl_1(branch7x7dbl)
+        branch7x7dbl = branch7x7dbl.to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0b_7x1']))
         branch7x7dbl = self.branch7x7dbl_2(branch7x7dbl)
+        branch7x7dbl = branch7x7dbl.to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0c_1x7']))
         branch7x7dbl = self.branch7x7dbl_3(branch7x7dbl)
+        branch7x7dbl = branch7x7dbl.to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0d_7x1']))
         branch7x7dbl = self.branch7x7dbl_4(branch7x7dbl)
+        branch7x7dbl = branch7x7dbl.to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0e_1x7']))
         branch7x7dbl = self.branch7x7dbl_5(branch7x7dbl)
 
-        branch_pool = F.avg_pool2d(x, kernel_size=3, stride=1, padding=1)
+        # Branch_3
+        branch_pool = x.to(torch.device(self.placement[f'{self.name}/Branch_3/AvgPool_0a_3x3']))
+        branch_pool = F.avg_pool2d(branch_pool, kernel_size=3, stride=1, padding=1)
+        branch_pool = branch_pool.to(torch.device(self.placement[f'{self.name}/Branch_3/Conv2d_0b_1x1']))
         branch_pool = self.branch_pool(branch_pool)
 
-        outputs = [branch1x1, branch7x7, branch7x7dbl, branch_pool]
+        concat_device = torch.device(self.placement[f'{self.name}/concat'])
+        outputs = [branch1x1.to(concat_device), branch7x7.to(concat_device),
+                   branch7x7dbl.to(concat_device), branch_pool.to(concat_device)]
         return outputs
 
     def forward(self, x):
@@ -328,27 +424,52 @@ class InceptionD(nn.Module):
 
     def __init__(self, in_channels, conv_block=None, placement=None, name=''):
         super(InceptionD, self).__init__()
+
+        self.placement = placement
+        self.name = name
+
         if conv_block is None:
             conv_block = BasicConv2d
-        self.branch3x3_1 = conv_block(in_channels, 192, kernel_size=1)
-        self.branch3x3_2 = conv_block(192, 320, kernel_size=3, stride=2)
 
-        self.branch7x7x3_1 = conv_block(in_channels, 192, kernel_size=1)
-        self.branch7x7x3_2 = conv_block(192, 192, kernel_size=(1, 7), padding=(0, 3))
-        self.branch7x7x3_3 = conv_block(192, 192, kernel_size=(7, 1), padding=(3, 0))
-        self.branch7x7x3_4 = conv_block(192, 192, kernel_size=3, stride=2)
+        # Branch_0
+        self.branch3x3_1 = conv_block(in_channels, 192, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_0/Conv2d_0a_1x1']))
+        self.branch3x3_2 = conv_block(192, 320, kernel_size=3, stride=2)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_0/Conv2d_1a_3x3']))
+
+        # Branch_1
+        self.branch7x7x3_1 = conv_block(in_channels, 192, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0a_1x1']))
+        self.branch7x7x3_2 = conv_block(192, 192, kernel_size=(1, 7), padding=(0, 3))\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_1x7']))
+        self.branch7x7x3_3 = conv_block(192, 192, kernel_size=(7, 1), padding=(3, 0))\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_7x1']))
+        self.branch7x7x3_4 = conv_block(192, 192, kernel_size=3, stride=2)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_1a_3x3']))
 
     def _forward(self, x):
-        branch3x3 = self.branch3x3_1(x)
+        # Branch_0
+        branch3x3 = x.to(torch.device(self.placement[f'{self.name}/Branch_0/Conv2d_0a_1x1']))
+        branch3x3 = self.branch3x3_1(branch3x3)
+        branch3x3 = branch3x3.to(torch.device(self.placement[f'{self.name}/Branch_0/Conv2d_1a_3x3']))
         branch3x3 = self.branch3x3_2(branch3x3)
 
-        branch7x7x3 = self.branch7x7x3_1(x)
+        # Branch_1
+        branch7x7x3 = x.to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0a_1x1']))
+        branch7x7x3 = self.branch7x7x3_1(branch7x7x3)
+        branch7x7x3 = branch7x7x3.to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_1x7']))
         branch7x7x3 = self.branch7x7x3_2(branch7x7x3)
+        branch7x7x3 = branch7x7x3.to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_7x1']))
         branch7x7x3 = self.branch7x7x3_3(branch7x7x3)
+        branch7x7x3 = branch7x7x3.to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_1a_3x3']))
         branch7x7x3 = self.branch7x7x3_4(branch7x7x3)
 
-        branch_pool = F.max_pool2d(x, kernel_size=3, stride=2)
-        outputs = [branch3x3, branch7x7x3, branch_pool]
+        # Branch_2
+        branch_pool = x.to(torch.device(self.placement[f'{self.name}/Branch_2/MaxPool_1a_3x3']))
+        branch_pool = F.max_pool2d(branch_pool, kernel_size=3, stride=2)
+
+        concat_device = torch.device(self.placement[f'{self.name}/concat'])
+        outputs = [branch3x3.to(concat_device), branch7x7x3.to(concat_device), branch_pool.to(concat_device)]
         return outputs
 
     def forward(self, x):
@@ -360,43 +481,78 @@ class InceptionE(nn.Module):
 
     def __init__(self, in_channels, conv_block=None, placement=None, name=''):
         super(InceptionE, self).__init__()
+
+        self.placement = placement
+        self.name = name
+
         if conv_block is None:
             conv_block = BasicConv2d
-        self.branch1x1 = conv_block(in_channels, 320, kernel_size=1)
 
-        self.branch3x3_1 = conv_block(in_channels, 384, kernel_size=1)
-        self.branch3x3_2a = conv_block(384, 384, kernel_size=(1, 3), padding=(0, 1))
-        self.branch3x3_2b = conv_block(384, 384, kernel_size=(3, 1), padding=(1, 0))
 
-        self.branch3x3dbl_1 = conv_block(in_channels, 448, kernel_size=1)
-        self.branch3x3dbl_2 = conv_block(448, 384, kernel_size=3, padding=1)
-        self.branch3x3dbl_3a = conv_block(384, 384, kernel_size=(1, 3), padding=(0, 1))
-        self.branch3x3dbl_3b = conv_block(384, 384, kernel_size=(3, 1), padding=(1, 0))
+        # Branch_0
+        self.branch1x1 = conv_block(in_channels, 320, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_0/Conv2d_0a_1x1']))
 
-        self.branch_pool = conv_block(in_channels, 192, kernel_size=1)
+        # Branch_1
+        self.branch3x3_1 = conv_block(in_channels, 384, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0a_1x1']))
+        self.branch3x3_2a = conv_block(384, 384, kernel_size=(1, 3), padding=(0, 1))\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_1x3']))
+        self.branch3x3_2b = conv_block(384, 384, kernel_size=(3, 1), padding=(1, 0))\
+            .to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_3x1']))
+
+        # Branch_2
+        self.branch3x3dbl_1 = conv_block(in_channels, 448, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0a_1x1']))
+        self.branch3x3dbl_2 = conv_block(448, 384, kernel_size=3, padding=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0b_3x3']))
+        self.branch3x3dbl_3a = conv_block(384, 384, kernel_size=(1, 3), padding=(0, 1))\
+            .to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0c_1x3']))
+        self.branch3x3dbl_3b = conv_block(384, 384, kernel_size=(3, 1), padding=(1, 0))\
+            .to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0d_3x1']))
+
+        # Branch_3
+        self.branch_pool = conv_block(in_channels, 192, kernel_size=1)\
+            .to(torch.device(self.placement[f'{self.name}/Branch_3/Conv2d_0b_1x1']))
 
     def _forward(self, x):
-        branch1x1 = self.branch1x1(x)
+        # Branch_0
+        branch1x1 = x.to(torch.device(self.placement[f'{self.name}/Branch_0/Conv2d_0a_1x1']))
+        branch1x1 = self.branch1x1(branch1x1)
 
-        branch3x3 = self.branch3x3_1(x)
+        # Branch_1
+        branch3x3 = x.to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0a_1x1']))
+        branch3x3 = self.branch3x3_1(branch3x3)
         branch3x3 = [
-            self.branch3x3_2a(branch3x3),
-            self.branch3x3_2b(branch3x3),
+            self.branch3x3_2a(branch3x3.to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_1x3']))),
+            self.branch3x3_2b(branch3x3.to(torch.device(self.placement[f'{self.name}/Branch_1/Conv2d_0b_3x1']))),
         ]
+        concat_device = torch.device(self.placement[f'{self.name}/Branch_1/concat'])
+        branch3x3 = [branch3x3[0].to(concat_device), branch3x3[1].to(concat_device)]
         branch3x3 = torch.cat(branch3x3, 1)
 
-        branch3x3dbl = self.branch3x3dbl_1(x)
+        # Branch_2
+        branch3x3dbl = x.to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0a_1x1']))
+        branch3x3dbl = self.branch3x3dbl_1(branch3x3dbl)
+        branch3x3dbl = branch3x3dbl.to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0b_3x3']))
         branch3x3dbl = self.branch3x3dbl_2(branch3x3dbl)
         branch3x3dbl = [
-            self.branch3x3dbl_3a(branch3x3dbl),
-            self.branch3x3dbl_3b(branch3x3dbl),
+            self.branch3x3dbl_3a(branch3x3dbl.to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0c_1x3']))),
+            self.branch3x3dbl_3b(branch3x3dbl.to(torch.device(self.placement[f'{self.name}/Branch_2/Conv2d_0d_3x1']))),
         ]
+        concat_device = torch.device(self.placement[f'{self.name}/Branch_2/concat'])
+        branch3x3dbl = [branch3x3dbl[0].to(concat_device), branch3x3dbl[1].to(concat_device)]
         branch3x3dbl = torch.cat(branch3x3dbl, 1)
 
-        branch_pool = F.avg_pool2d(x, kernel_size=3, stride=1, padding=1)
+        # Branch_3
+        branch_pool = x.to(torch.device(self.placement[f'{self.name}/Branch_3/AvgPool_0a_3x3']))
+        branch_pool = F.avg_pool2d(branch_pool, kernel_size=3, stride=1, padding=1)
+        branch_pool = branch_pool.to(torch.device(self.placement[f'{self.name}/Branch_3/Conv2d_0b_1x1']))
         branch_pool = self.branch_pool(branch_pool)
 
-        outputs = [branch1x1, branch3x3, branch3x3dbl, branch_pool]
+        concat_device = torch.device(self.placement[f'{self.name}/concat'])
+        outputs = [branch1x1.to(concat_device), branch3x3.to(concat_device),
+                   branch3x3dbl.to(concat_device), branch_pool.to(concat_device)]
         return outputs
 
     def forward(self, x):
@@ -408,15 +564,22 @@ class InceptionAux(nn.Module):
 
     def __init__(self, in_channels, num_classes, conv_block=None, placement=None, name=''):
         super(InceptionAux, self).__init__()
+
+        self.placement = placement
+        self.name = name
+
+        self.device = torch.device(self.placement['Mixed_6e/concat'])
+
         if conv_block is None:
             conv_block = BasicConv2d
-        self.conv0 = conv_block(in_channels, 128, kernel_size=1)
-        self.conv1 = conv_block(128, 768, kernel_size=5)
+        self.conv0 = conv_block(in_channels, 128, kernel_size=1).to(self.device)
+        self.conv1 = conv_block(128, 768, kernel_size=5).to(self.device)
         self.conv1.stddev = 0.01
-        self.fc = nn.Linear(768, num_classes)
+        self.fc = nn.Linear(768, num_classes).to(self.device)
         self.fc.stddev = 0.001
 
     def forward(self, x):
+        x = x.to(self.device)
         # N x 768 x 17 x 17
         x = F.avg_pool2d(x, kernel_size=5, stride=3)
         # N x 768 x 5 x 5
