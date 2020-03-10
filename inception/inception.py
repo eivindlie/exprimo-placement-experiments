@@ -81,27 +81,29 @@ class Inception3(nn.Module):
         inception_e = inception_blocks[5]
         inception_aux = inception_blocks[6]
 
+        self.placement = placement
+
         self.aux_logits = aux_logits
         self.transform_input = transform_input
-        self.Conv2d_1a_3x3 = conv_block(3, 32, kernel_size=3, stride=2)
-        self.Conv2d_2a_3x3 = conv_block(32, 32, kernel_size=3)
-        self.Conv2d_2b_3x3 = conv_block(32, 64, kernel_size=3, padding=1)
-        self.Conv2d_3b_1x1 = conv_block(64, 80, kernel_size=1)
-        self.Conv2d_4a_3x3 = conv_block(80, 192, kernel_size=3)
-        self.Mixed_5b = inception_a(192, pool_features=32)
-        self.Mixed_5c = inception_a(256, pool_features=64)
-        self.Mixed_5d = inception_a(288, pool_features=64)
-        self.Mixed_6a = inception_b(288)
-        self.Mixed_6b = inception_c(768, channels_7x7=128)
-        self.Mixed_6c = inception_c(768, channels_7x7=160)
-        self.Mixed_6d = inception_c(768, channels_7x7=160)
-        self.Mixed_6e = inception_c(768, channels_7x7=192)
+        self.Conv2d_1a_3x3 = conv_block(3, 32, kernel_size=3, stride=2).to(self.get_device('Conv2d_1a_3x3'))
+        self.Conv2d_2a_3x3 = conv_block(32, 32, kernel_size=3).to(self.get_device('Conv2d_2a_3x3'))
+        self.Conv2d_2b_3x3 = conv_block(32, 64, kernel_size=3, padding=1).to(self.get_device('Conv2d_2b_3x3'))
+        self.Conv2d_3b_1x1 = conv_block(64, 80, kernel_size=1).to(self.get_device('Conv2d_3b_1x1'))
+        self.Conv2d_4a_3x3 = conv_block(80, 192, kernel_size=3).to(self.get_device('Conv2d_4a_3x3'))
+        self.Mixed_5b = inception_a(192, pool_features=32, placement=placement, name='Mixed_5b')
+        self.Mixed_5c = inception_a(256, pool_features=64, placement=placement, name='Mixed_5c')
+        self.Mixed_5d = inception_a(288, pool_features=64, placement=placement, name='Mixed_5d')
+        self.Mixed_6a = inception_b(288, placement=placement, name='Mixed_6a')
+        self.Mixed_6b = inception_c(768, channels_7x7=128, placement=placement, name='Mixed_6b')
+        self.Mixed_6c = inception_c(768, channels_7x7=160, placement=placement, name='Mixed_6c')
+        self.Mixed_6d = inception_c(768, channels_7x7=160, placement=placement, name='Mixed_6d')
+        self.Mixed_6e = inception_c(768, channels_7x7=192, placement=placement, name='Mixed_6e')
         if aux_logits:
-            self.AuxLogits = inception_aux(768, num_classes)
-        self.Mixed_7a = inception_d(768)
-        self.Mixed_7b = inception_e(1280)
-        self.Mixed_7c = inception_e(2048)
-        self.fc = nn.Linear(2048, num_classes)
+            self.AuxLogits = inception_aux(768, num_classes, placement=placement)
+        self.Mixed_7a = inception_d(768, placement=placement, name='Mixed_7a')
+        self.Mixed_7b = inception_e(1280, placement=placement, name='Mixed_7b')
+        self.Mixed_7c = inception_e(2048, placement=placement, name='Mixed_7c')
+        self.fc = nn.Linear(2048, num_classes).to(self.get_device('softmax'))
         if init_weights:
             for m in self.modules():
                 if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
@@ -115,6 +117,9 @@ class Inception3(nn.Module):
                 elif isinstance(m, nn.BatchNorm2d):
                     nn.init.constant_(m.weight, 1)
                     nn.init.constant_(m.bias, 0)
+
+    def get_device(self, layer):
+        return torch.device(self.placement[layer])
 
     def _transform_input(self, x):
         if self.transform_input:
@@ -201,7 +206,7 @@ class Inception3(nn.Module):
 
 class InceptionA(nn.Module):
 
-    def __init__(self, in_channels, pool_features, conv_block=None):
+    def __init__(self, in_channels, pool_features, conv_block=None, placement=None, name=''):
         super(InceptionA, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -239,7 +244,7 @@ class InceptionA(nn.Module):
 
 class InceptionB(nn.Module):
 
-    def __init__(self, in_channels, conv_block=None):
+    def __init__(self, in_channels, conv_block=None, placement=None, name=''):
         super(InceptionB, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -268,7 +273,7 @@ class InceptionB(nn.Module):
 
 class InceptionC(nn.Module):
 
-    def __init__(self, in_channels, channels_7x7, conv_block=None):
+    def __init__(self, in_channels, channels_7x7, conv_block=None, placement=None, name=''):
         super(InceptionC, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -313,7 +318,7 @@ class InceptionC(nn.Module):
 
 class InceptionD(nn.Module):
 
-    def __init__(self, in_channels, conv_block=None):
+    def __init__(self, in_channels, conv_block=None, placement=None, name=''):
         super(InceptionD, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -345,7 +350,7 @@ class InceptionD(nn.Module):
 
 class InceptionE(nn.Module):
 
-    def __init__(self, in_channels, conv_block=None):
+    def __init__(self, in_channels, conv_block=None, placement=None, name=''):
         super(InceptionE, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -393,7 +398,7 @@ class InceptionE(nn.Module):
 
 class InceptionAux(nn.Module):
 
-    def __init__(self, in_channels, num_classes, conv_block=None):
+    def __init__(self, in_channels, num_classes, conv_block=None, placement=None, name=''):
         super(InceptionAux, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -423,7 +428,7 @@ class InceptionAux(nn.Module):
 
 class BasicConv2d(nn.Module):
 
-    def __init__(self, in_channels, out_channels, **kwargs):
+    def __init__(self, in_channels, out_channels, placement=None, name='', **kwargs):
         super(BasicConv2d, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
         self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
