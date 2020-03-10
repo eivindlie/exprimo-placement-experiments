@@ -1,6 +1,6 @@
 from __future__ import division
 
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import warnings
 import torch
 import torch.nn as nn
@@ -80,6 +80,14 @@ class Inception3(nn.Module):
         inception_d = inception_blocks[4]
         inception_e = inception_blocks[5]
         inception_aux = inception_blocks[6]
+
+        if placement is None:
+            placement = defaultdict(lambda: 'cpu:0')
+        elif isinstance(placement, str):
+            old_placement = placement
+            placement = defaultdict(lambda: old_placement)
+        else:
+            placement = defaultdict(lambda: 'cpu:0', placement)
 
         self.placement = placement
 
