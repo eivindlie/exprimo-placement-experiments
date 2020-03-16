@@ -1,5 +1,7 @@
 import torch
 import time
+import pandas as pd
+import matplotlib.pyplot as plt
 
 
 def benchmark_bandwidth(tensor_size, source_device, target_device):
@@ -20,6 +22,19 @@ def benchmark_bandwidth(tensor_size, source_device, target_device):
     bandwidth = (bandwidth * 8) / 10**6  # Mbit/s
 
     return bandwidth
+
+
+def plot_results_from_file(file_path, source_device, target_device, server_name):
+    results = pd.read_csv(file_path, index_col=0)
+    results['average'] = results.mean(axis=1)
+
+    plt.plot(results.index, results['average'])
+    plt.xscale('log')
+    plt.xlabel('Tensor size (Bytes)')
+    plt.ylabel('Bandwidth (Mbit/s)')
+    plt.title(f'Transfer from {source_device} to {target_device} ({server_name})')
+
+    plt.show()
 
 
 if __name__ == '__main__':
