@@ -58,8 +58,10 @@ if __name__ == '__main__':
     result_file = './bandwidth.csv'
     source_device = 'cpu'
     target_device = 'cuda:0'
-    transfer_repeats = 10
+    transfer_repeats = 100
     tensor_sizes = [10**i for i in range(3, 10)]
 
     benchmark_multiple_tensor_sizes(tensor_sizes, source_device, target_device, transfer_repeats, result_file)
+
+    # plot_results_from_file('../bandwidth-luke.csv', 'cpu', 'cuda:0', 'Luke01')
 
