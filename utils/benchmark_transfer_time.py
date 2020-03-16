@@ -32,6 +32,7 @@ if __name__ == '__main__':
         f.write('')
 
     for tensor_size in tensor_sizes:
+        print(f'Benchmarking tensor of size {tensor_size // 1000}KB')
         bandwidth = benchmark_bandwidth(tensor_size, source_device, target_device)
 
         with open(result_file, 'a') as f:
