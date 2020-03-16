@@ -39,4 +39,4 @@ if __name__ == '__main__':
 
         print(f'{sum(bandwidths) / len(bandwidths)}Mbit/s')
         with open(result_file, 'a') as f:
-            f.write(f'{tensor_size}, {", ".join(bandwidths)}\n')
+            f.write(f'{tensor_size}, {", ".join(map(str, bandwidths))}\n')
