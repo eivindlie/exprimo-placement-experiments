@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     for tensor_size in tensor_sizes:
         print(f'Benchmarking tensor of size {tensor_size / 10**6:.3f}MB... ', end='')
-        bandwidths = [benchmark_bandwidth(tensor_size, source_device, target_device) for i in transfer_repeats]
+        bandwidths = [benchmark_bandwidth(tensor_size, source_device, target_device) for i in range(transfer_repeats)]
 
         print(f'{sum(bandwidths) / len(bandwidths)}Mbit/s')
         with open(result_file, 'a') as f:
