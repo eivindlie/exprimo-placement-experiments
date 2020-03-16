@@ -2,6 +2,8 @@ import torch
 import time
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set()
 
 
 def benchmark_bandwidth(tensor_size, source_device, target_device):
@@ -25,10 +27,9 @@ def benchmark_bandwidth(tensor_size, source_device, target_device):
 
 
 def plot_results_from_file(file_path, source_device, target_device, server_name):
-    results = pd.read_csv(file_path, index_col=0)
-    results['average'] = results.mean(axis=1)
+    results = pd.read_csv(file_path, skiprows=1, names=['tensor_size', 'bandwidth'])
 
-    plt.plot(results.index, results['average'])
+    sns.lineplot(x='tensor_size', y='bandwidth', data=results)
     plt.xscale('log')
     plt.xlabel('Tensor size (Bytes)')
     plt.ylabel('Bandwidth (Mbit/s)')
@@ -40,8 +41,7 @@ def plot_results_from_file(file_path, source_device, target_device, server_name)
 def benchmark_multiple_tensor_sizes(tensor_sizes, source_device='cpu', target_device='cuda:0', transfer_repeats=10,
                                     result_file='./bandwidth.csv'):
     with open(result_file, 'w') as f:
-        header = f'tensor_size, {", ".join(f"transfer_{i}" for i in range(transfer_repeats))}'
-        f.write(header)
+        f.write('tensor_size, bandwidth')
 
     for tensor_size in tensor_sizes:
         print(f'Benchmarking tensor of size {tensor_size / 10**6:.3f}MB... ', end='')
