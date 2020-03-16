@@ -37,13 +37,8 @@ def plot_results_from_file(file_path, source_device, target_device, server_name)
     plt.show()
 
 
-if __name__ == '__main__':
-    result_file = './bandwidth.csv'
-    source_device = 'cpu'
-    target_device = 'cuda:0'
-    transfer_repeats = 10
-    tensor_sizes = [10**i for i in range(3, 11)]
-
+def benchmark_multiple_tensor_sizes(tensor_sizes, source_device='cpu', target_device='cuda:0', transfer_repeats=10,
+                                    result_file='./bandwidth.csv'):
     with open(result_file, 'w') as f:
         header = f'tensor_size, {", ".join(f"transfer_{i}" for i in range(transfer_repeats))}'
         f.write(header)
@@ -52,6 +47,19 @@ if __name__ == '__main__':
         print(f'Benchmarking tensor of size {tensor_size / 10**6:.3f}MB... ', end='')
         bandwidths = [benchmark_bandwidth(tensor_size, source_device, target_device) for i in range(transfer_repeats)]
 
+        for bandwidth in bandwidths:
+            with open(result_file, 'a') as f:
+                f.write(f'{tensor_size}, {bandwidth}\n')
+
         print(f'{sum(bandwidths) / len(bandwidths)}Mbit/s')
-        with open(result_file, 'a') as f:
-            f.write(f'{tensor_size}, {", ".join(map(str, bandwidths))}\n')
+
+
+if __name__ == '__main__':
+    result_file = './bandwidth.csv'
+    source_device = 'cpu'
+    target_device = 'cuda:0'
+    transfer_repeats = 10
+    tensor_sizes = [10**i for i in range(3, 10)]
+
+    benchmark_multiple_tensor_sizes(tensor_sizes, source_device, target_device, transfer_repeats, result_file)
+
