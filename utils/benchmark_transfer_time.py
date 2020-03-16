@@ -26,14 +26,17 @@ if __name__ == '__main__':
     result_file = './bandwidth.csv'
     source_device = 'cpu'
     target_device = 'cuda:0'
+    transfer_repeats = 10
     tensor_sizes = [10**i for i in range(3, 11)]
 
     with open(result_file, 'w') as f:
-        f.write('')
+        header = f'tensor_size, {", ".join(f"transfer_{i}" for i in range(transfer_repeats))}'
+        f.write(header)
 
     for tensor_size in tensor_sizes:
         print(f'Benchmarking tensor of size {tensor_size / 10**6:.3f}MB... ', end='')
-        bandwidth = benchmark_bandwidth(tensor_size, source_device, target_device)
-        print(f'{bandwidth}Mbit/s')
+        bandwidths = [benchmark_bandwidth(tensor_size, source_device, target_device) for i in transfer_repeats]
+
+        print(f'{sum(bandwidths) / len(bandwidths)}Mbit/s')
         with open(result_file, 'a') as f:
-            f.write(f'{tensor_size}, {bandwidth}\n')
+            f.write(f'{tensor_size}, {", ".join(bandwidths)}\n')
