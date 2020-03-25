@@ -27,7 +27,7 @@ def generation_filter(file):
     return generation % 10 == 0
 
 dir_list = os.listdir(placement_directory)
-dir_list = filter(generation_filter, dir_list)
+dir_list = list(filter(generation_filter, dir_list))
 
 for i, file in enumerate(dir_list):
     if file.endswith('.json'):
