@@ -19,7 +19,16 @@ results_file = args.results_file
 with open(results_file, 'w') as f:
     f.write('')
 
+
+def generation_filter(file):
+    if not file.endswith('.json'):
+        return False
+    generation = int(file.replace('gen_', '').replace('.json', ''))
+    return generation % 10 == 0
+
 dir_list = os.listdir(placement_directory)
+dir_list = filter(generation_filter, dir_list)
+
 for i, file in enumerate(dir_list):
     if file.endswith('.json'):
         with open(os.path.join(placement_directory, file)) as f:
@@ -27,7 +36,7 @@ for i, file in enumerate(dir_list):
 
         print(f'Benchmarking assignment {i + 1}/{len(dir_list)}: {file}')
 
-        batch_times = benchmark_with_placement(placement=placement)
+        batch_times = benchmark_with_placement(placement=placement, batches=10)
 
         with open(results_file, 'a') as f:
             f.write(f'{file}, {",".join(map(lambda x: str(x), batch_times))}\n')
