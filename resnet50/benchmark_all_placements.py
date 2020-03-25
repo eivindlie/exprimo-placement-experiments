@@ -29,5 +29,5 @@ for i, file in enumerate(dir_list):
 
         batch_times = benchmark_with_placement(placement=placement)
 
-    with open(results_file, 'a') as f:
-        f.write(f'{file}, {",".join(map(lambda x: str(x), batch_times))}\n')
+        with open(results_file, 'a') as f:
+            f.write(f'{file}, {",".join(map(lambda x: str(x), batch_times))}\n')
