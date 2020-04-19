@@ -3,7 +3,7 @@ import time
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-sns.set()
+sns.set(style='whitegrid')
 
 
 def benchmark_bandwidth(tensor_size, source_device, target_device):
@@ -26,11 +26,13 @@ def benchmark_bandwidth(tensor_size, source_device, target_device):
     return bandwidth
 
 
-def plot_results_from_file(file_path, source_device, target_device, server_name):
+def plot_results_from_file(file_path, source_device, target_device, server_name, theoretical_bandwidth=-1):
     results = pd.read_csv(file_path, skiprows=1, names=['tensor_size', 'bandwidth'])
 
     sns.lineplot(x='tensor_size', y='bandwidth', data=results)
     plt.xscale('log')
+    if theoretical_bandwidth > 0:
+        plt.axhline(y=theoretical_bandwidth, c='grey', ls='--')
     plt.xlabel('Tensor size (Bytes)')
     plt.ylabel('Bandwidth (Mbit/s)')
     plt.title(f'Transfer from {source_device} to {target_device} ({server_name})')
@@ -61,7 +63,7 @@ if __name__ == '__main__':
     transfer_repeats = 100
     tensor_sizes = [10**i for i in range(3, 10)]
 
-    benchmark_multiple_tensor_sizes(tensor_sizes, source_device, target_device, transfer_repeats, result_file)
+    # benchmark_multiple_tensor_sizes(tensor_sizes, source_device, target_device, transfer_repeats, result_file)
 
-    # plot_results_from_file('../bandwidth-luke.csv', 'cpu', 'cuda:0', 'Luke01')
+    plot_results_from_file('../bandwidth-luke.csv', 'cpu', 'cuda:0', 'Luke', theoretical_bandwidth=128000)
 
