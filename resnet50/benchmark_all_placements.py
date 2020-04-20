@@ -48,7 +48,7 @@ for i, file in enumerate(tqdm(dir_list)):
 
         print(f'Benchmarking assignment {i + 1}/{len(dir_list)}: {file}')
 
-        batch_times = benchmark_with_placement(placement=placement, batches=10)
+        batch_times = benchmark_with_placement(placement=placement, batches=50)
 
         with open(results_file, 'a') as f:
             f.write(f'{file}, {",".join(map(lambda x: str(x), batch_times))}\n')
