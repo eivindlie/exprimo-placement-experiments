@@ -1,6 +1,7 @@
 import os
 import argparse
 import json
+from tqdm import tqdm
 
 from benchmark import benchmark_with_placement
 
@@ -38,7 +39,9 @@ def generation_filter(file):
 dir_list = os.listdir(placement_directory)
 dir_list = list(filter(generation_filter, dir_list))
 
-for i, file in enumerate(dir_list):
+print = tqdm.write
+
+for i, file in enumerate(tqdm(dir_list)):
     if file.endswith('.json'):
         with open(os.path.join(placement_directory, file)) as f:
             placement = json.load(f)
