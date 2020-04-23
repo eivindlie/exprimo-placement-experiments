@@ -2,9 +2,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-sns.set(style='whitegrid')
+sns.set(style='darkgrid')
 
-FILE_PATH = '../../exprimo/experiment_results/sim_real_comp/resnet_benchmark_with_all_batches.csv'
+FILE_PATH = '../../exprimo/experiment_results/e2-1_batch_times_without_last_batch.csv'
 
 # Set whether to subtract and divide by average, yielding residuals as fraction of average training time
 NORMALIZE = True
