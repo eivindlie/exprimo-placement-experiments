@@ -1,3 +1,5 @@
+import os
+
 import torch
 import time
 import pandas as pd
@@ -26,7 +28,8 @@ def benchmark_bandwidth(tensor_size, source_device, target_device):
     return bandwidth
 
 
-def plot_results_from_file(file_path, source_device, target_device, server_name, theoretical_bandwidth=-1):
+def plot_results_from_file(file_path, source_device, target_device, server_name, theoretical_bandwidth=-1,
+                           save_path=None):
     results = pd.read_csv(file_path, skiprows=1, names=['tensor_size', 'bandwidth'])
 
     sns.lineplot(x='tensor_size', y='bandwidth', data=results)
@@ -36,6 +39,9 @@ def plot_results_from_file(file_path, source_device, target_device, server_name,
     plt.xlabel('Tensor size (Bytes)')
     plt.ylabel('Bandwidth (Mbit/s)')
     plt.title(f'Transfer from {source_device} to {target_device} ({server_name})')
+
+    if save_path:
+        plt.savefig(save_path)
 
     plt.show()
 
@@ -65,5 +71,6 @@ if __name__ == '__main__':
 
     # benchmark_multiple_tensor_sizes(tensor_sizes, source_device, target_device, transfer_repeats, result_file)
 
-    plot_results_from_file('../bandwidth-luke.csv', 'cpu', 'cuda:0', 'Luke', theoretical_bandwidth=128000)
+    plot_results_from_file('../bandwidth-malvik.csv', 'cpu', 'cuda:0', 'Malvik', theoretical_bandwidth=128000,
+                           save_path=os.path.expanduser('~/logs/bandwidth-malvik.pdf'))
 
