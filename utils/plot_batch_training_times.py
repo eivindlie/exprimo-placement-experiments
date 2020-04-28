@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,7 +18,7 @@ PLOT_INDIVIDUAL = False
 def plot_times(data, title, output_file=None):
     plt.plot(data)
     plt.xlabel('Batch')
-    plt.ylabel('Training time (ms)')
+    plt.ylabel('Residual batch training time (fraction of mean)')
     plt.title(title)
 
     if output_file:
@@ -37,10 +39,10 @@ if __name__ == '__main__':
             generation = results.index[0].replace('gen_', '').replace('.json', '')
             times = results.iloc[i, 1:]
 
-            output_file = f'../../exprimo/experiment_results/plots/batch_training_times/gen_{generation}.pdf'
+            output_file = os.path.expanduser(f'~/logs/batch_training_time/gen_{generation}.pdf')
 
             plot_times(times, f'Generation {generation}', output_file)
     else:
         avg_results = results.mean(axis=0)
         plot_times(avg_results, 'Average batch time residuals',
-                   output_file='../../exprimo/experiment_results/plots/batch_training_times/average.pdf')
+                   output_file=os.path.expanduser(f'~/logs/batch_training_time_without_last_batch.pdf'))
