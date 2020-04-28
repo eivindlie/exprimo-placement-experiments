@@ -22,7 +22,7 @@ def plot_times(data, title, output_file=None):
     plt.title(title)
 
     if output_file:
-        plt.savefig(output_file)
+        plt.savefig(output_file, bbox_inches='tight')
 
     plt.show()
 
@@ -45,4 +45,4 @@ if __name__ == '__main__':
     else:
         avg_results = results.mean(axis=0)
         plot_times(avg_results, 'Average batch time residuals',
-                   output_file=os.path.expanduser(f'~/logs/batch_training_time_without_last_batch.pdf'))
+                   output_file=os.path.expanduser(f'~/logs/e2-1_batch_training_time_without_last_batch.pdf'))

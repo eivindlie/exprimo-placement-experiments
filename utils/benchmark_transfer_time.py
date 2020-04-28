@@ -41,7 +41,7 @@ def plot_results_from_file(file_path, source_device, target_device, server_name,
     plt.title(f'Transfer from {source_device} to {target_device} ({server_name})')
 
     if save_path:
-        plt.savefig(save_path)
+        plt.savefig(save_path, bbox_inches='tight')
 
     plt.show()
 
@@ -71,6 +71,6 @@ if __name__ == '__main__':
 
     # benchmark_multiple_tensor_sizes(tensor_sizes, source_device, target_device, transfer_repeats, result_file)
 
-    plot_results_from_file('../bandwidth-malvik.csv', 'cpu', 'cuda:0', 'Malvik', theoretical_bandwidth=128000,
-                           save_path=os.path.expanduser('~/logs/bandwidth-malvik.pdf'))
+    plot_results_from_file('../e1-1_bandwidth-malvik.csv', 'cpu', 'cuda:0', 'Malvik', theoretical_bandwidth=128000,
+                           save_path=os.path.expanduser('~/logs/e1-1_bandwidth-malvik.pdf'))
 
