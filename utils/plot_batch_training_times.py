@@ -20,7 +20,7 @@ def plot_times(data, title, output_file=None):
     plt.title(title)
 
     if output_file:
-        plt.savefig(output_file, transparent=False)
+        plt.savefig(output_file)
 
     plt.show()
 
@@ -37,10 +37,10 @@ if __name__ == '__main__':
             generation = results.index[0].replace('gen_', '').replace('.json', '')
             times = results.iloc[i, 1:]
 
-            output_file = f'../../exprimo/experiment_results/plots/batch_training_times/gen_{generation}.png'
+            output_file = f'../../exprimo/experiment_results/plots/batch_training_times/gen_{generation}.pdf'
 
             plot_times(times, f'Generation {generation}', output_file)
     else:
         avg_results = results.mean(axis=0)
         plot_times(avg_results, 'Average batch time residuals',
-                   output_file='../../exprimo/experiment_results/plots/batch_training_times/average.png')
+                   output_file='../../exprimo/experiment_results/plots/batch_training_times/average.pdf')
