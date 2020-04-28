@@ -5,7 +5,7 @@ import time
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-sns.set(style='whitegrid')
+sns.set(style='darkgrid')
 
 
 def benchmark_bandwidth(tensor_size, source_device, target_device):
