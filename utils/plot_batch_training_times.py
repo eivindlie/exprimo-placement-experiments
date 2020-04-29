@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(style='darkgrid')
 
-FILE_PATH = '../../exprimo/experiment_results/e2-1_batch_times_without_last_batch.csv'
+FILE_PATH = '~/logs/e2_batch_times/e2-2_batch_times_with_all_batches.csv'
 
 # Set whether to subtract and divide by average, yielding residuals as fraction of average training time
 NORMALIZE = True
@@ -44,5 +44,6 @@ if __name__ == '__main__':
             plot_times(times, f'Generation {generation}', output_file)
     else:
         avg_results = results.mean(axis=0)
-        plot_times(avg_results, 'Average batch time residuals',
-                   output_file=os.path.expanduser(f'~/logs/e2-1_batch_training_time_without_last_batch.pdf'))
+        plot_times(avg_results, 'Average batch time residuals (with last batch in dataset)',
+                   output_file=os.path.expanduser(
+                       f'~/logs/e2_batch_times/e2-2_batch_training_time_with_last_batch.svg'))
